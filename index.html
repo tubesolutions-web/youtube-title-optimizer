@@ -1701,6 +1701,9 @@ select.ig-input { cursor: pointer; }
 <!-- ── App Shell ── -->
 <div id="app-shell">
 <div id="global-sidebar" class="sidebar">
+
+  <!-- My Channels section (titles + ideas pages) -->
+  <div id="gsb-channels">
     <div class="sidebar-header"><h2>My Channels</h2></div>
     <div class="niche-list" id="niche-list"></div>
     <button class="btn-add-niche" onclick="openModal()">+ Add channel</button>
@@ -1720,6 +1723,26 @@ select.ig-input { cursor: pointer; }
       <button class="btn-settings" onclick="openSettings()">⚙ Settings</button>
       <div id="active-provider-pill"></div>
     </div>
+  </div>
+
+  <!-- Trackers section -->
+  <div id="gsb-trackers" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div class="sidebar-header"><h2>Trackers</h2></div>
+    <div class="tracker-channel-list" id="tracker-group-list" style="flex:1;overflow-y:auto"></div>
+    <div style="padding:12px 16px;border-top:1px solid var(--sidebar-border);margin-top:8px">
+      <button class="btn-add-niche" onclick="trackerOpenNewGroup()">+ New tracker</button>
+    </div>
+  </div>
+
+  <!-- Bookmarks section -->
+  <div id="gsb-bookmarks" style="display:none;flex-direction:column;flex:1;min-height:0">
+    <div class="sidebar-header"><h2>Folders</h2></div>
+    <div id="bm-folder-list" style="flex:1;overflow-y:auto"></div>
+    <div style="padding:8px 10px;border-top:1px solid var(--sidebar-border);margin-top:8px">
+      <button class="bm-add-folder-btn" onclick="bmNewFolder()">+ New folder</button>
+    </div>
+  </div>
+
 </div>
 
 <div id="page-container">
@@ -1953,10 +1976,6 @@ select.ig-input { cursor: pointer; }
       <input id="nf-keyword-input" type="text" placeholder="Search a niche or paste a channel URL — e.g. https://www.youtube.com/@MrBeast" />
       <div class="nf-search-actions">
         <button class="nf-random-btn" onclick="nfRandom()">⚄ Random</button>
-        <div class="nf-tracker-wrap" id="nf-tracker-wrap">
-          <button class="nf-filter-open-btn" id="nf-tracker-btn" onclick="nfToggleTrackerPicker()">📊 Tracker ▾</button>
-          <div class="nf-tracker-dropdown" id="nf-tracker-dropdown" style="display:none"></div>
-        </div>
         <button class="nf-filter-open-btn" id="nf-filter-open-btn" onclick="openNfFilters()">⚙ Filters</button>
         <button class="nf-search-btn" id="nf-search-btn" onclick="nfSearch()">Find Outliers</button>
       </div>
@@ -2055,15 +2074,6 @@ select.ig-input { cursor: pointer; }
 <!-- ── Tracker Page ── -->
 <div id="page-tracker" class="page">
   <div class="tracker-layout">
-
-    <div class="tracker-sidebar">
-      <div class="tracker-sidebar-header"><h2>Trackers</h2></div>
-      <div class="tracker-channel-list" id="tracker-group-list"></div>
-      <div style="padding:12px 16px;border-top:1px solid #2a2a2a;margin-top:8px">
-        <button class="btn-add-niche" onclick="trackerOpenNewGroup()">+ New tracker</button>
-      </div>
-    </div>
-
     <div class="tracker-main">
       <!-- All trackers view -->
       <div id="tracker-view-all" style="display:none">
@@ -3524,6 +3534,22 @@ document.getElementById('channel-url')?.addEventListener('keydown', e => { if (e
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
+
+  const sidebar = document.getElementById('global-sidebar');
+  const gsbc = document.getElementById('gsb-channels');
+  const gsbt = document.getElementById('gsb-trackers');
+  const gsbk = document.getElementById('gsb-bookmarks');
+  const noSidebarPages = ['thumbnail', 'thumb-preview', 'niche'];
+
+  if (noSidebarPages.includes(page)) {
+    sidebar.style.display = 'none';
+  } else {
+    sidebar.style.display = '';
+    gsbc.style.display = (page === 'tracker' || page === 'bookmarks') ? 'none' : '';
+    gsbt.style.display = page === 'tracker' ? 'flex' : 'none';
+    gsbk.style.display = page === 'bookmarks' ? 'flex' : 'none';
+  }
+
   renderSidebar();
   document.querySelectorAll('.top-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.page === page);
@@ -5341,12 +5367,6 @@ if (niches.length) igSelectChannel(niches[0].id);
 <!-- ── Bookmarks Page ── -->
 <div id="page-bookmarks" class="page">
   <div class="bm-layout">
-    <!-- Sidebar -->
-    <div class="bm-sidebar">
-      <div class="bm-sidebar-header">Folders</div>
-      <div id="bm-folder-list"></div>
-      <button class="bm-add-folder-btn" onclick="bmNewFolder()">+ New folder</button>
-    </div>
     <!-- Main -->
     <div class="bm-main">
       <div class="bookmarks-header">
