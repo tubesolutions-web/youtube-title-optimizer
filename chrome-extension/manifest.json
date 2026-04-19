@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Tube Solutions",
+  "version": "1.0",
+  "description": "Aged channel checker, video bookmarks & tracker, and Studio EP number badges for YouTube.",
+  "permissions": ["storage", "tabs", "scripting", "clipboardWrite"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://studio.youtube.com/*",
+    "https://tubesolutions-web.github.io/*",
+    "https://i.ytimg.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["aged-checker.js", "trackers.js"],
+      "css": ["trackers.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://studio.youtube.com/*"],
+      "js": ["studio-ep-numbers.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://tubesolutions-web.github.io/*"],
+      "js": ["website-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Open Tube Solutions"
+  }
+}
