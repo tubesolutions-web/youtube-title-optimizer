@@ -41,6 +41,15 @@ function closeAllDropdowns() {
   document.querySelectorAll('.ts-label-dropdown').forEach(d => d.remove());
 }
 
+function positionDropdown(dropdown, badge) {
+  const rect = badge.getBoundingClientRect();
+  Object.assign(dropdown.style, {
+    position: 'fixed',
+    top: (rect.bottom + 4) + 'px',
+    left: rect.left + 'px',
+  });
+}
+
 function createLabelBadge(initialValue, videoId) {
   const wrapper = document.createElement('span');
   wrapper.className = 'ts-label-wrapper';
@@ -89,7 +98,6 @@ function createLabelBadge(initialValue, videoId) {
     const dropdown = document.createElement('div');
     dropdown.className = 'ts-label-dropdown';
     Object.assign(dropdown.style, {
-      position: 'absolute', top: '24px', left: '0',
       zIndex: '99999', background: '#1a1a2e',
       border: '1px solid #6d4faa', borderRadius: '8px',
       boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
@@ -170,7 +178,8 @@ function createLabelBadge(initialValue, videoId) {
     inputRow.appendChild(confirmBtn);
     dropdown.appendChild(inputRow);
 
-    wrapper.appendChild(dropdown);
+    document.body.appendChild(dropdown);
+    positionDropdown(dropdown, badge);
     input.focus();
 
     // Close on outside click
