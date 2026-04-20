@@ -17,6 +17,12 @@ async function saveLabel(videoId, value) {
   await chrome.storage.sync.set({ [LABEL_STORAGE_KEY]: labels });
 }
 
+async function getPresets() {
+  const labels = await getLabels();
+  // Unique values sorted alphabetically
+  return [...new Set(Object.values(labels).filter(Boolean))].sort();
+}
+
 function stopEvent(e) { e.preventDefault(); e.stopPropagation(); }
 
 function getRows() {
@@ -29,6 +35,10 @@ function getVideoId(row) {
     if (m) return m[1];
   }
   return null;
+}
+
+function closeAllDropdowns() {
+  document.querySelectorAll('.ts-label-dropdown').forEach(d => d.remove());
 }
 
 function createLabelBadge(initialValue, videoId) {
@@ -44,91 +54,163 @@ function createLabelBadge(initialValue, videoId) {
   badge.type = 'button';
   badge.className = 'ts-label-badge';
   badge.textContent = initialValue || 'Label';
-  Object.assign(badge.style, {
-    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    height: '20px', padding: '0 8px', fontSize: '11px', fontWeight: '700',
-    borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap',
-    color: initialValue ? '#e0d0ff' : '#888',
-    background: initialValue ? '#2d1f4a' : '#1e1e1e',
-    border: initialValue ? '1px solid #6d4faa' : '1px solid #3a3a3a',
-    fontFamily: 'Roboto, sans-serif',
-  });
+  setBadgeStyle(badge, initialValue);
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'ts-label-input';
-  input.value = initialValue || '';
-  input.placeholder = 'Label…';
-  input.maxLength = 20;
-  Object.assign(input.style, {
-    display: 'none', width: '80px', height: '20px', fontSize: '11px',
-    textAlign: 'center', borderRadius: '999px', border: '1px solid #6d4faa',
-    background: '#1a1a2e', color: '#e0d0ff', outline: 'none',
-    fontFamily: 'Roboto, sans-serif',
-  });
+  function setBadgeStyle(el, value) {
+    Object.assign(el.style, {
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      height: '20px', padding: '0 8px', fontSize: '11px', fontWeight: '700',
+      borderRadius: '999px', cursor: 'pointer', whiteSpace: 'nowrap',
+      color: value ? '#e0d0ff' : '#888',
+      background: value ? '#2d1f4a' : '#1e1e1e',
+      border: value ? '1px solid #6d4faa' : '1px solid #3a3a3a',
+      fontFamily: 'Roboto, sans-serif',
+    });
+  }
+
+  function updateBadge(value) {
+    badge.textContent = value || 'Label';
+    setBadgeStyle(badge, value);
+  }
+
+  async function applyLabel(value) {
+    await saveLabel(videoId, value);
+    updateBadge(value);
+    closeAllDropdowns();
+    wrapper.dataset.editing = 'false';
+  }
+
+  async function showDropdown() {
+    closeAllDropdowns();
+    wrapper.dataset.editing = 'true';
+
+    const presets = await getPresets();
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'ts-label-dropdown';
+    Object.assign(dropdown.style, {
+      position: 'absolute', top: '24px', left: '0',
+      zIndex: '99999', background: '#1a1a2e',
+      border: '1px solid #6d4faa', borderRadius: '8px',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.6)',
+      minWidth: '130px', overflow: 'hidden',
+      fontFamily: 'Roboto, sans-serif',
+    });
+
+    // Preset items
+    if (presets.length) {
+      presets.forEach(preset => {
+        const item = document.createElement('div');
+        item.textContent = preset;
+        Object.assign(item.style, {
+          padding: '7px 12px', cursor: 'pointer', fontSize: '12px',
+          color: '#e0d0ff', borderBottom: '1px solid #2a1f4a',
+          transition: 'background 0.1s',
+        });
+        item.addEventListener('mouseenter', () => item.style.background = '#2d1f4a');
+        item.addEventListener('mouseleave', () => item.style.background = '');
+        item.addEventListener('mousedown', (e) => {
+          stopEvent(e);
+          applyLabel(preset);
+        });
+        dropdown.appendChild(item);
+      });
+    }
+
+    // Clear option (if currently has a label)
+    const currentLabel = badge.textContent === 'Label' ? '' : badge.textContent;
+    if (currentLabel) {
+      const clearItem = document.createElement('div');
+      clearItem.textContent = '✕ Clear';
+      Object.assign(clearItem.style, {
+        padding: '7px 12px', cursor: 'pointer', fontSize: '12px',
+        color: '#f87171', borderBottom: '1px solid #2a1f4a',
+        transition: 'background 0.1s',
+      });
+      clearItem.addEventListener('mouseenter', () => clearItem.style.background = '#3a1010');
+      clearItem.addEventListener('mouseleave', () => clearItem.style.background = '');
+      clearItem.addEventListener('mousedown', (e) => { stopEvent(e); applyLabel(''); });
+      dropdown.appendChild(clearItem);
+    }
+
+    // Custom input row
+    const inputRow = document.createElement('div');
+    Object.assign(inputRow.style, { padding: '6px 8px', display: 'flex', gap: '4px' });
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'New label…';
+    input.maxLength = 20;
+    Object.assign(input.style, {
+      flex: '1', background: '#111', border: '1px solid #4a3a7a',
+      borderRadius: '4px', color: '#e0d0ff', fontSize: '11px',
+      padding: '3px 6px', outline: 'none', fontFamily: 'Roboto, sans-serif',
+    });
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = '✓';
+    Object.assign(confirmBtn.style, {
+      background: '#6d4faa', border: 'none', borderRadius: '4px',
+      color: '#fff', fontSize: '12px', cursor: 'pointer', padding: '2px 7px',
+    });
+
+    async function confirmNew() {
+      const val = input.value.trim();
+      if (val) await applyLabel(val);
+      else closeAllDropdowns();
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { stopEvent(e); confirmNew(); }
+      if (e.key === 'Escape') { stopEvent(e); closeAllDropdowns(); }
+    });
+    confirmBtn.addEventListener('mousedown', (e) => { stopEvent(e); confirmNew(); });
+
+    inputRow.appendChild(input);
+    inputRow.appendChild(confirmBtn);
+    dropdown.appendChild(inputRow);
+
+    wrapper.appendChild(dropdown);
+    input.focus();
+
+    // Close on outside click
+    setTimeout(() => {
+      document.addEventListener('click', () => {
+        closeAllDropdowns();
+        wrapper.dataset.editing = 'false';
+      }, { once: true });
+    }, 0);
+  }
 
   ['click', 'mousedown', 'mouseup', 'pointerdown'].forEach(ev => {
     wrapper.addEventListener(ev, stopEvent);
     badge.addEventListener(ev, stopEvent);
-    input.addEventListener(ev, stopEvent);
   });
-
-  function setBadgeValue(value) {
-    badge.textContent = value || 'Label';
-    badge.style.color = value ? '#e0d0ff' : '#888';
-    badge.style.background = value ? '#2d1f4a' : '#1e1e1e';
-    badge.style.border = value ? '1px solid #6d4faa' : '1px solid #3a3a3a';
-  }
 
   badge.addEventListener('click', (e) => {
     stopEvent(e);
-    wrapper.dataset.editing = 'true';
-    badge.style.display = 'none';
-    input.style.display = 'inline-block';
-    input.focus();
-    input.select();
-  });
-
-  async function saveAndClose() {
-    const value = input.value.trim();
-    input.value = value;
-    await saveLabel(videoId, value);
-    setBadgeValue(value);
-    input.style.display = 'none';
-    badge.style.display = 'inline-flex';
-    wrapper.dataset.editing = 'false';
-  }
-
-  input.addEventListener('keydown', async (e) => {
-    if (e.key === 'Enter') { stopEvent(e); await saveAndClose(); }
-    if (e.key === 'Escape') {
-      stopEvent(e);
-      input.style.display = 'none';
-      badge.style.display = 'inline-flex';
+    if (wrapper.querySelector('.ts-label-dropdown')) {
+      closeAllDropdowns();
       wrapper.dataset.editing = 'false';
+    } else {
+      showDropdown();
     }
   });
 
-  input.addEventListener('blur', async () => {
-    if (wrapper.dataset.editing === 'true') await saveAndClose();
-  });
-
   wrapper.appendChild(badge);
-  wrapper.appendChild(input);
   return wrapper;
 }
 
-function updateExistingBadge(wrapper, value, videoId) {
+function updateExistingBadge(wrapper, value) {
   if (wrapper.dataset.editing === 'true') return;
-  wrapper.dataset.videoId = videoId;
   const badge = wrapper.querySelector('.ts-label-badge');
-  const input = wrapper.querySelector('.ts-label-input');
-  if (!badge || !input) return;
+  if (!badge) return;
   badge.textContent = value || 'Label';
-  badge.style.color = value ? '#e0d0ff' : '#888';
-  badge.style.background = value ? '#2d1f4a' : '#1e1e1e';
-  badge.style.border = value ? '1px solid #6d4faa' : '1px solid #3a3a3a';
-  input.value = value || '';
+  Object.assign(badge.style, {
+    color: value ? '#e0d0ff' : '#888',
+    background: value ? '#2d1f4a' : '#1e1e1e',
+    border: value ? '1px solid #6d4faa' : '1px solid #3a3a3a',
+  });
 }
 
 async function inject() {
@@ -144,7 +226,7 @@ async function inject() {
     const existing = row.querySelector('.ts-label-wrapper');
     if (existing) {
       if (existing.dataset.videoId === videoId) {
-        updateExistingBadge(existing, labels[videoId] || '', videoId);
+        updateExistingBadge(existing, labels[videoId] || '');
         return;
       }
       existing.remove();
@@ -152,12 +234,8 @@ async function inject() {
 
     const badge = createLabelBadge(labels[videoId] || '', videoId);
     const epBadge = titleEl.querySelector('.ep-inline-wrapper');
-    if (epBadge) {
-      epBadge.after(badge);
-    } else {
-      // No EP badge yet — append so EP can still prepend before us later
-      titleEl.insertBefore(badge, titleEl.firstChild);
-    }
+    if (epBadge) epBadge.after(badge);
+    else titleEl.insertBefore(badge, titleEl.firstChild);
   });
 }
 
