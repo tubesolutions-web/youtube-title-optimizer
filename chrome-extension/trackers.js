@@ -673,20 +673,37 @@ function scanPage() {
 
 // ── MutationObserver + SPA navigation ────────────────────────────────────────
 
-let scanTimer = null;
-const observer = new MutationObserver(() => {
-  clearTimeout(scanTimer);
-  scanTimer = setTimeout(scanPage, 300);
-});
-observer.observe(document.documentElement, { childList: true, subtree: true });
+chrome.storage.sync.get('tsFeatures', (data) => {
+  if ((data['tsFeatures'] || {}).tracker === false) return;
 
-window.addEventListener('yt-navigate-finish', () => {
-  clearTimeout(channelBtnTimer);
-  channelBtnObserver?.disconnect(); channelBtnObserver = null;
-  document.getElementById(TS_WATCH_ID)?.remove();
-  document.getElementById(TS_CHANNEL_BTN_ID)?.remove();
-  closePopup();
-  setTimeout(scanPage, 200);
+  let scanTimer = null;
+  const observer = new MutationObserver(() => {
+    clearTimeout(scanTimer);
+    scanTimer = setTimeout(scanPage, 300);
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+
+  window.addEventListener('yt-navigate-finish', () => {
+    clearTimeout(channelBtnTimer);
+    channelBtnObserver?.disconnect(); channelBtnObserver = null;
+    document.getElementById(TS_WATCH_ID)?.remove();
+    document.getElementById(TS_CHANNEL_BTN_ID)?.remove();
+    closePopup();
+    setTimeout(scanPage, 200);
+  });
+
+  scanPage();
 });
 
-scanPage();
+chrome.storage.onChanged.addListener((changes) => {
+  if (!changes['tsFeatures']) return;
+  const feat = changes['tsFeatures'].newValue || {};
+  if (feat.tracker === false) {
+    document.querySelectorAll(`.${TS_CLASS}`).forEach(el => el.remove());
+    document.getElementById(TS_WATCH_ID)?.remove();
+    document.getElementById(TS_CHANNEL_BTN_ID)?.remove();
+    closePopup();
+  } else {
+    scanPage();
+  }
+});

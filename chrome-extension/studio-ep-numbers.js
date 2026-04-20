@@ -229,4 +229,16 @@ async function boot() {
   setInterval(runAll, 3000);
 }
 
-boot();
+chrome.storage.sync.get('tsFeatures', (data) => {
+  if ((data['tsFeatures'] || {}).epNumbers !== false) boot();
+});
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (!changes['tsFeatures']) return;
+  const feat = changes['tsFeatures'].newValue || {};
+  if (feat.epNumbers === false) {
+    document.querySelectorAll('.ep-inline-wrapper').forEach(el => el.remove());
+  } else {
+    runAll();
+  }
+});

@@ -19,7 +19,7 @@
     },
     {
       "matches": ["https://studio.youtube.com/*"],
-      "js": ["studio-ep-numbers.js"],
+      "js": ["studio-ep-numbers.js", "auto-description.js"],
       "run_at": "document_idle"
     },
     {
@@ -32,6 +32,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Open Tube Solutions"
+    "default_title": "Tube Solutions",
+    "default_popup": "popup.html"
   }
 }

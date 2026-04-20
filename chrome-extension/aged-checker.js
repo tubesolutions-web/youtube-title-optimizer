@@ -146,6 +146,8 @@ const channelDetector = (() => {
   }
 
   async function run() {
+    const featData = await chrome.storage.sync.get('tsFeatures');
+    if ((featData['tsFeatures'] || {}).agedChecker === false) { removeBadge(); return; }
     if (running) return;
     running = true;
     try {
@@ -189,7 +191,19 @@ const channelDetector = (() => {
   };
 })();
 
-window.addEventListener('yt-navigate-start', () => channelDetector.onNavigateStart());
-window.addEventListener('yt-navigate-finish', () => channelDetector.onNavigate());
+chrome.storage.sync.get('tsFeatures', (data) => {
+  if ((data['tsFeatures'] || {}).agedChecker === false) return;
+  window.addEventListener('yt-navigate-start', () => channelDetector.onNavigateStart());
+  window.addEventListener('yt-navigate-finish', () => channelDetector.onNavigate());
+  channelDetector.run();
+});
 
-channelDetector.run();
+chrome.storage.onChanged.addListener((changes) => {
+  if (!changes['tsFeatures']) return;
+  const feat = changes['tsFeatures'].newValue || {};
+  if (feat.agedChecker === false) {
+    document.getElementById('ts-channel-badge')?.remove();
+  } else {
+    channelDetector.run();
+  }
+});
