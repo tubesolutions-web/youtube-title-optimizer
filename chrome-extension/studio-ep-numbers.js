@@ -1,6 +1,6 @@
 // Tube Solutions — YouTube Studio content script
 // Adds editable EP number badges to YouTube Studio video rows.
-
+(() => {
 const STORAGE_KEY = 'ytStudioEpMap';
 
 function sleep(ms) {
@@ -242,3 +242,5 @@ chrome.storage.onChanged.addListener((changes) => {
     runAll();
   }
 });
+
+})();

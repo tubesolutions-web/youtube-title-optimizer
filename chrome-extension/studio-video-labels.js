@@ -1,6 +1,6 @@
 // Tube Solutions — Video Labels for YouTube Studio
 // Free-form label badge per video (e.g. VidRush, Manual, AI, etc.)
-
+(() => {
 const LABEL_STORAGE_KEY = 'tsVideoLabels'; // { videoId: labelText }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -182,3 +182,5 @@ chrome.storage.onChanged.addListener((changes) => {
     inject();
   }
 });
+
+})();
