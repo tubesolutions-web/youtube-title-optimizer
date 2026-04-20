@@ -254,9 +254,11 @@ async function boot() {
     await sleep(500);
   }
 
-  new MutationObserver(() => inject()).observe(document.body, {
-    childList: true, subtree: true,
-  });
+  let debounceTimer;
+  new MutationObserver(() => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(inject, 300);
+  }).observe(document.body, { childList: true, subtree: true });
 
   setInterval(inject, 3000);
 }
