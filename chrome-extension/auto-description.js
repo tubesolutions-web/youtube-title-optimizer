@@ -270,16 +270,16 @@ async function injectButton() {
     setTimeout(() => { btn.textContent = '⚡ Fill'; }, 2000);
   });
 
-  // Place button below the description field
+  // Place button as overlay inside the description field container
   const fieldContainer = ce.closest('ytcp-social-suggestions-textbox') ||
                          ce.closest('[class*="description"]') ||
                          ce.parentElement;
-  const insertAfter = fieldContainer?.closest('ytcp-form-input-container') || fieldContainer;
-  if (insertAfter?.parentElement) {
-    const wrapper = document.createElement('div');
-    Object.assign(wrapper.style, { display: 'flex', marginTop: '6px' });
-    wrapper.appendChild(btn);
-    insertAfter.after(wrapper);
+  const posParent = fieldContainer?.closest('ytcp-form-input-container') || fieldContainer;
+  if (posParent) {
+    const cur = window.getComputedStyle(posParent).position;
+    if (cur === 'static') posParent.style.position = 'relative';
+    Object.assign(btn.style, { position: 'absolute', bottom: '8px', left: '10px', marginLeft: '0' });
+    posParent.appendChild(btn);
   } else {
     ce.parentElement?.appendChild(btn);
   }
