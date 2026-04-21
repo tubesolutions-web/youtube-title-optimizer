@@ -97,7 +97,7 @@ async function injectButton() {
 
   const btn = document.createElement('button');
   btn.id = BTN_ID;
-  btn.textContent = '⚡ Fill';
+  btn.textContent = '⚡ Description template';
   Object.assign(btn.style, {
     background: 'none',
     border: '1px solid #3a3a3a',
@@ -225,7 +225,7 @@ async function injectButton() {
         picker.remove();
         setDescription(field, tmpl[name]);
         btn.textContent = '✓ Done';
-        setTimeout(() => { btn.textContent = '⚡ Fill'; }, 2000);
+        setTimeout(() => { btn.textContent = '⚡ Description template'; }, 2000);
       });
       picker.appendChild(item);
     });
@@ -261,13 +261,13 @@ async function injectButton() {
     const template = findTemplate(tmpl, channelName);
     if (!template) {
       const keys = Object.keys(tmpl);
-      if (!keys.length) { btn.textContent = 'No templates saved'; setTimeout(() => { btn.textContent = '⚡ Fill'; }, 3000); return; }
+      if (!keys.length) { btn.textContent = 'No templates saved'; setTimeout(() => { btn.textContent = '⚡ Description template'; }, 3000); return; }
       showTemplatePicker(tmpl, field);
       return;
     }
     setDescription(field, template);
     btn.textContent = '✓ Done';
-    setTimeout(() => { btn.textContent = '⚡ Fill'; }, 2000);
+    setTimeout(() => { btn.textContent = '⚡ Description template'; }, 2000);
   });
 
   // Place button as overlay inside the description field container
