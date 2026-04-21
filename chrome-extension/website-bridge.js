@@ -14,6 +14,9 @@ window.addEventListener('message', async ({ source, data }) => {
     } else if (tsReq === 'remove') {
       await chrome.storage.local.remove(payload);
       window.postMessage({ tsRes: 'remove', id }, '*');
+    } else if (tsReq === 'fetchTranscript') {
+      const result = await chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', videoId: payload.videoId });
+      window.postMessage({ tsRes: 'fetchTranscript', id, result }, '*');
     }
   } catch (e) {
     window.postMessage({ tsRes: 'error', id, error: e.message }, '*');
