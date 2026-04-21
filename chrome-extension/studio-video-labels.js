@@ -114,6 +114,53 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
   function updateBadge(value, colorKey) {
     badge.textContent = value || 'Label';
     applyBadgeStyle(badge, value, colorKey);
+    deleteBtn.style.display = value ? 'inline-flex' : 'none';
+  }
+
+  function showDeleteConfirm(labelName) {
+    document.getElementById('ts-delete-confirm')?.remove();
+    const overlay = document.createElement('div');
+    overlay.id = 'ts-delete-confirm';
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', zIndex: '999999',
+      background: 'rgba(0,0,0,0.55)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+    });
+    const modal = document.createElement('div');
+    Object.assign(modal.style, {
+      background: '#1a1a2e', border: '1px solid #6d4faa', borderRadius: '12px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.8)', padding: '24px 28px',
+      fontFamily: 'Roboto, sans-serif', display: 'flex', flexDirection: 'column', gap: '16px',
+      minWidth: '260px', maxWidth: '340px',
+    });
+    const msg = document.createElement('div');
+    Object.assign(msg.style, { color: '#e0d0ff', fontSize: '14px', lineHeight: '1.5' });
+    msg.textContent = `Remove label "${labelName}" from this video?`;
+    const row = document.createElement('div');
+    Object.assign(row.style, { display: 'flex', justifyContent: 'flex-end', gap: '10px' });
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    Object.assign(cancelBtn.style, {
+      background: 'none', border: '1px solid #3a3a3a', borderRadius: '6px',
+      color: '#aaa', fontSize: '12px', padding: '6px 14px', cursor: 'pointer',
+      fontFamily: 'Roboto, sans-serif',
+    });
+    cancelBtn.addEventListener('click', () => overlay.remove());
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Remove';
+    Object.assign(confirmBtn.style, {
+      background: '#7f1d1d', border: '1px solid #f87171', borderRadius: '6px',
+      color: '#fca5a5', fontSize: '12px', fontWeight: '700',
+      padding: '6px 14px', cursor: 'pointer', fontFamily: 'Roboto, sans-serif',
+    });
+    confirmBtn.addEventListener('click', () => { overlay.remove(); applyLabel('', null); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    row.appendChild(cancelBtn);
+    row.appendChild(confirmBtn);
+    modal.appendChild(msg);
+    modal.appendChild(row);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
   }
 
   async function applyLabel(value, colorKey) {
@@ -270,7 +317,30 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
     }
   });
 
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'button';
+  deleteBtn.textContent = '×';
+  Object.assign(deleteBtn.style, {
+    display: initialValue ? 'inline-flex' : 'none',
+    alignItems: 'center', justifyContent: 'center',
+    width: '14px', height: '14px', marginLeft: '3px',
+    background: 'rgba(248,113,113,0.15)', border: '1px solid #f87171',
+    borderRadius: '50%', color: '#f87171', fontSize: '11px', lineHeight: '1',
+    cursor: 'pointer', padding: '0', flexShrink: '0',
+    fontFamily: 'Roboto, sans-serif', fontWeight: '700',
+  });
+  deleteBtn.addEventListener('mouseenter', () => { deleteBtn.style.background = 'rgba(248,113,113,0.35)'; });
+  deleteBtn.addEventListener('mouseleave', () => { deleteBtn.style.background = 'rgba(248,113,113,0.15)'; });
+  ['click', 'mousedown', 'mouseup', 'pointerdown'].forEach(ev => deleteBtn.addEventListener(ev, stopEvent));
+  deleteBtn.addEventListener('click', (e) => {
+    stopEvent(e);
+    closeAllDropdowns();
+    const labelName = badge.textContent === 'Label' ? '' : badge.textContent;
+    if (labelName) showDeleteConfirm(labelName);
+  });
+
   wrapper.appendChild(badge);
+  wrapper.appendChild(deleteBtn);
   return wrapper;
 }
 
