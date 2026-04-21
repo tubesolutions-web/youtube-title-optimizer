@@ -1,8 +1,9 @@
 // Tube Solutions — Video Labels for YouTube Studio
 // Free-form label badge per video (e.g. VidRush, Manual, AI, etc.)
 (() => {
-const LABEL_STORAGE_KEY = 'tsVideoLabels'; // { videoId: labelText }
-const COLOR_STORAGE_KEY = 'tsLabelColors'; // { labelText: colorKey }
+const LABEL_STORAGE_KEY = 'tsVideoLabels';  // { videoId: labelText }
+const COLOR_STORAGE_KEY = 'tsLabelColors';  // { labelText: colorKey }
+const PRESETS_KEY       = 'tsLabelPresets'; // { labelText: colorKey } — user-created presets
 
 const PALETTE = [
   { key: 'purple', bg: '#2d1f4a', border: '#7c3aed', text: '#e0d0ff' },
@@ -44,10 +45,28 @@ async function saveLabelColor(label, colorKey) {
   await chrome.storage.sync.set({ [COLOR_STORAGE_KEY]: colors });
 }
 
+async function savePreset(name, colorKey) {
+  const data = await chrome.storage.sync.get(PRESETS_KEY);
+  const presets = data[PRESETS_KEY] || {};
+  presets[name] = colorKey;
+  await chrome.storage.sync.set({ [PRESETS_KEY]: presets });
+}
+
+async function deletePreset(name) {
+  const data = await chrome.storage.sync.get(PRESETS_KEY);
+  const presets = data[PRESETS_KEY] || {};
+  delete presets[name];
+  await chrome.storage.sync.set({ [PRESETS_KEY]: presets });
+}
+
 async function getPresets() {
-  const [labels, colors] = await Promise.all([getLabels(), getLabelColors()]);
-  const names = [...new Set(Object.values(labels).filter(Boolean))].sort();
-  return names.map(name => ({ name, colorKey: colors[name] || 'purple' }));
+  const [labels, colors, presetsData] = await Promise.all([
+    getLabels(), getLabelColors(), chrome.storage.sync.get(PRESETS_KEY),
+  ]);
+  const explicit = presetsData[PRESETS_KEY] || {};
+  const fromVideos = Object.values(labels).filter(Boolean);
+  const allNames = [...new Set([...Object.keys(explicit), ...fromVideos])].sort();
+  return allNames.map(name => ({ name, colorKey: explicit[name] || colors[name] || 'purple' }));
 }
 
 function stopEvent(e) { e.preventDefault(); e.stopPropagation(); }
@@ -134,7 +153,7 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
     });
     const msg = document.createElement('div');
     Object.assign(msg.style, { color: '#e0d0ff', fontSize: '14px', lineHeight: '1.5' });
-    msg.textContent = `Remove label "${labelName}" from this video?`;
+    msg.textContent = `Delete label "${labelName}"? It will be removed from all videos and the preset list.`;
     const row = document.createElement('div');
     Object.assign(row.style, { display: 'flex', justifyContent: 'flex-end', gap: '10px' });
     const cancelBtn = document.createElement('button');
@@ -152,7 +171,16 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
       color: '#fca5a5', fontSize: '12px', fontWeight: '700',
       padding: '6px 14px', cursor: 'pointer', fontFamily: 'Roboto, sans-serif',
     });
-    confirmBtn.addEventListener('click', () => { overlay.remove(); applyLabel('', null); });
+    confirmBtn.addEventListener('click', async () => {
+      overlay.remove();
+      await deletePreset(labelName);
+      // Remove from all videos that use this label
+      const labels = await getLabels();
+      const toUpdate = Object.entries(labels).filter(([, v]) => v === labelName);
+      for (const [vid] of toUpdate) await saveLabel(vid, '');
+      // If current video had this label, clear the badge
+      if ((badge.textContent === labelName)) applyLabel('', null);
+    });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     row.appendChild(cancelBtn);
     row.appendChild(confirmBtn);
@@ -295,8 +323,15 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
 
     async function confirmNew() {
       const val = input.value.trim();
-      if (val) await applyLabel(val, selectedColorKey);
-      else closeAllDropdowns();
+      if (!val) { closeAllDropdowns(); return; }
+      await savePreset(val, selectedColorKey);
+      await saveLabelColor(val, selectedColorKey);
+      input.value = '';
+      // Re-render dropdown with updated presets
+      closeAllDropdowns();
+      wrapper.dataset.editing = 'false';
+      showDropdown();
+      return;
     }
 
     input.addEventListener('keydown', (e) => {
