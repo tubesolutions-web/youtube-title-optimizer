@@ -6487,25 +6487,47 @@ function trackerQuickAddToGroup(groupId) {
 
 // ── Script Generator ────────────────────────────────────────────────────────
 
-// Transcript fetching via extension bridge
-function sgFetchTranscript(videoId) {
-  return new Promise((resolve, reject) => {
-    const id = 'sg-' + Math.random().toString(36).slice(2);
-    function handler({ data }) {
-      if (data?.id !== id) return;
-      window.removeEventListener('message', handler);
-      if (data.tsRes === 'error') reject(new Error(data.error || 'Extension bridge error'));
-      else if (data.result?.error) reject(new Error(data.result.error));
-      else if (data.result?.text) resolve(data.result.text);
-      else reject(new Error('No transcript returned — make sure the extension is reloaded'));
-    }
-    window.addEventListener('message', handler);
-    window.postMessage({ tsReq: 'fetchTranscript', id, payload: { videoId } }, '*');
-    setTimeout(() => {
-      window.removeEventListener('message', handler);
-      reject(new Error('Timed out — reload the Tube Solutions extension in chrome://extensions'));
-    }, 25000);
+// Transcript fetching via CORS proxy (no extension required)
+async function sgFetchTranscript(videoId) {
+  const proxy = 'https://corsproxy.io/?url=';
+
+  const pageResp = await fetch(proxy + encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`), {
+    headers: { 'Accept-Language': 'en-US,en;q=0.9' },
   });
+  if (!pageResp.ok) throw new Error('HTTP ' + pageResp.status);
+  const html = await pageResp.text();
+
+  const m = html.match(/"captionTracks":(\[[\s\S]*?\]),"audioTracks"/) ||
+            html.match(/"captionTracks":(\[[\s\S]*?\]),"translationLanguages"/);
+  if (!m) throw new Error('No transcript available for this video');
+
+  const tracks = JSON.parse(m[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/'));
+  if (!tracks?.length) throw new Error('No transcript available');
+
+  const track = tracks.find(t => t.languageCode === 'en') ||
+                tracks.find(t => t.languageCode?.startsWith('en')) ||
+                tracks[0];
+  if (!track?.baseUrl) throw new Error('No transcript available');
+
+  const cleanUrl = track.baseUrl.replace(/[&?]fmt=[^&]*/g, '');
+  const sep = cleanUrl.includes('?') ? '&' : '?';
+  const captResp = await fetch(proxy + encodeURIComponent(cleanUrl + sep + 'fmt=json3'));
+  if (!captResp.ok) throw new Error('Could not fetch captions');
+  const raw = await captResp.text();
+
+  let text = '';
+  try {
+    const captData = JSON.parse(raw);
+    text = (captData.events || [])
+      .filter(e => e.segs)
+      .flatMap(e => e.segs.map(s => s.utf8 || ''))
+      .join('').replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  } catch {
+    text = raw.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+  }
+
+  if (!text) throw new Error('No transcript text found');
+  return text;
 }
 
 function sgExtractVideoId(url) {
