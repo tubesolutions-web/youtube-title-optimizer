@@ -45,6 +45,41 @@ FEATURE_IDS.forEach(id => {
 
 // ── Main View ──
 
+function showDeleteConfirm(channelName) {
+  document.getElementById('ts-popup-confirm')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'ts-popup-confirm';
+  Object.assign(overlay.style, {
+    position: 'fixed', inset: '0', zIndex: '9999',
+    background: 'rgba(0,0,0,0.65)', display: 'flex',
+    alignItems: 'center', justifyContent: 'center',
+  });
+  overlay.innerHTML = `
+    <div style="background:#1a1a2e;border:1px solid #6d4faa;border-radius:10px;
+                padding:20px 22px;max-width:240px;font-family:Roboto,sans-serif;
+                display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 30px rgba(0,0,0,0.7)">
+      <div style="color:#e0d0ff;font-size:13px;line-height:1.5">
+        Delete template <strong>"${escHtml(channelName)}"</strong>?
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button id="ts-confirm-cancel" style="background:none;border:1px solid #3a3a3a;border-radius:5px;
+          color:#aaa;font-size:11px;padding:5px 12px;cursor:pointer">Cancel</button>
+        <button id="ts-confirm-delete" style="background:#7f1d1d;border:1px solid #f87171;border-radius:5px;
+          color:#fca5a5;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer">Delete</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#ts-confirm-cancel').addEventListener('click', () => overlay.remove());
+  overlay.querySelector('#ts-confirm-delete').addEventListener('click', async () => {
+    overlay.remove();
+    delete templates[channelName];
+    if (currentChannel === channelName) currentChannel = null;
+    await chrome.storage.sync.set({ [STORAGE_KEY]: templates });
+    renderMainView();
+    renderSettingsSelect();
+  });
+}
+
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -62,7 +97,10 @@ function renderMainView() {
   channelFillList.innerHTML = channels.map(ch => `
     <div class="channel-fill-row">
       <span class="channel-fill-name">${escHtml(ch)}</span>
-      <button class="edit-btn" data-channel="${escHtml(ch)}">Edit</button>
+      <div style="display:flex;gap:6px">
+        <button class="edit-btn" data-channel="${escHtml(ch)}">Edit</button>
+        <button class="delete-tmpl-btn" data-channel="${escHtml(ch)}">✕</button>
+      </div>
     </div>
   `).join('');
 
@@ -72,6 +110,13 @@ function renderMainView() {
       viewMain.classList.remove('active');
       viewSettings.classList.add('active');
       renderSettingsSelect();
+    });
+  });
+
+  channelFillList.querySelectorAll('.delete-tmpl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ch = btn.dataset.channel;
+      showDeleteConfirm(ch);
     });
   });
 }
