@@ -180,7 +180,7 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
       if (onAfter) onAfter();
     });
     cancelBtn.addEventListener('click', () => { overlay.remove(); if (onAfter) onAfter(); });
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    overlay.addEventListener('click', (e) => { e.stopPropagation(); if (e.target === overlay) { overlay.remove(); if (onAfter) onAfter(); } });
     row.appendChild(cancelBtn);
     row.appendChild(confirmBtn);
     modal.appendChild(msg);
