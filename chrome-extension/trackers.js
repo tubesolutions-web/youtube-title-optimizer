@@ -291,6 +291,17 @@ function copyTitle(video) {
   });
 }
 
+// ── Copy URL ──────────────────────────────────────────────────────────────────
+
+function copyVideoUrl(video) {
+  const url = `https://www.youtube.com/watch?v=${video.id}`;
+  navigator.clipboard.writeText(url).then(() => {
+    showToast('🔗 URL copied!');
+  }).catch(() => {
+    showToast('❌ Failed to copy URL');
+  });
+}
+
 // ── Copy thumbnail ────────────────────────────────────────────────────────────
 
 async function copyThumbnail(video) {
@@ -459,6 +470,7 @@ function openOverlayDropdown(anchorBtn, video) {
     { icon: '📝', label: 'Generate titles', action: () => openGenerateTitlesPicker(video) },
     { icon: '📋', label: 'Copy transcript', action: () => copyTranscript(video) },
     { icon: '✏️', label: 'Copy title', action: () => copyTitle(video) },
+    { icon: '🔗', label: 'Copy URL', action: () => copyVideoUrl(video) },
     { icon: '🖼', label: 'Copy thumbnail', action: () => copyThumbnail(video) },
     { icon: '⬇', label: 'Download thumbnail', action: () => downloadThumbnail(video) },
   ];
@@ -554,6 +566,7 @@ function injectWatchButtons() {
     ['📝 Generate titles',   () => openGenerateTitlesPicker(video)],
     ['📋 Copy transcript',   () => copyTranscript(video)],
     ['✏️ Copy title',        () => copyTitle(video)],
+    ['🔗 Copy URL',          () => copyVideoUrl(video)],
     ['🖼 Copy thumbnail',    () => copyThumbnail(video)],
     ['⬇ Download thumbnail', () => downloadThumbnail(video)],
   ];
