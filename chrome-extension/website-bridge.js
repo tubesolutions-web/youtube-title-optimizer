@@ -15,8 +15,20 @@ window.addEventListener('message', async ({ source, data }) => {
       await chrome.storage.local.remove(payload);
       window.postMessage({ tsRes: 'remove', id }, '*');
     } else if (tsReq === 'fetchTranscript') {
-      const result = await chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', videoId: payload.videoId });
-      window.postMessage({ tsRes: 'fetchTranscript', id, result }, '*');
+      try {
+        const result = await chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', videoId: payload.videoId });
+        window.postMessage({ tsRes: 'fetchTranscript', id, result }, '*');
+      } catch (e) {
+        // Retry once — service worker may have been sleeping
+        await new Promise(r => setTimeout(r, 600));
+        try {
+          const result = await chrome.runtime.sendMessage({ type: 'FETCH_TRANSCRIPT', videoId: payload.videoId });
+          window.postMessage({ tsRes: 'fetchTranscript', id, result }, '*');
+        } catch (e2) {
+          window.postMessage({ tsRes: 'fetchTranscript', id, result: { error: e2.message } }, '*');
+        }
+      }
+      return;
     }
   } catch (e) {
     window.postMessage({ tsRes: 'error', id, error: e.message }, '*');
