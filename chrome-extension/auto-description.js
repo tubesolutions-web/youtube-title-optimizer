@@ -134,6 +134,41 @@ async function injectButton() {
   btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#6d4faa'; btn.style.color = '#c4b0ff'; });
   btn.addEventListener('mouseleave', () => { btn.style.borderColor = '#3a3a3a'; btn.style.color = '#aaa'; });
 
+  function showTemplatePicker(tmpl, field) {
+    document.getElementById('ts-tmpl-picker')?.remove();
+    const keys = Object.keys(tmpl);
+    const picker = document.createElement('div');
+    picker.id = 'ts-tmpl-picker';
+    Object.assign(picker.style, {
+      position: 'absolute', zIndex: '99999', background: '#1a1a2e',
+      border: '1px solid #6d4faa', borderRadius: '8px',
+      boxShadow: '0 6px 20px rgba(0,0,0,0.6)', minWidth: '160px', overflow: 'hidden',
+      fontFamily: 'Roboto, sans-serif',
+    });
+    keys.forEach(name => {
+      const item = document.createElement('div');
+      item.textContent = name;
+      Object.assign(item.style, {
+        padding: '8px 14px', cursor: 'pointer', fontSize: '12px',
+        color: '#e0d0ff', borderBottom: '1px solid #2a1f4a',
+      });
+      item.addEventListener('mouseenter', () => item.style.background = '#2d1f4a');
+      item.addEventListener('mouseleave', () => item.style.background = '');
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        picker.remove();
+        setDescription(field, tmpl[name]);
+        btn.textContent = '✓ Done';
+        setTimeout(() => { btn.textContent = '⚡ Fill'; }, 2000);
+      });
+      picker.appendChild(item);
+    });
+    const rect = btn.getBoundingClientRect();
+    Object.assign(picker.style, { position: 'fixed', top: (rect.bottom + 4) + 'px', left: rect.left + 'px' });
+    document.body.appendChild(picker);
+    setTimeout(() => document.addEventListener('click', () => picker.remove(), { once: true }), 0);
+  }
+
   btn.addEventListener('click', async () => {
     const field = getDescriptionField();
     if (!field) { btn.textContent = '⚡ Not found'; return; }
@@ -143,8 +178,9 @@ async function injectButton() {
     if (!channelName) { await sleep(800); channelName = getChannelName(); }
     const template = findTemplate(tmpl, channelName);
     if (!template) {
-      btn.textContent = channelName ? `No template for "${channelName}"` : 'No template';
-      setTimeout(() => { btn.textContent = '⚡ Fill'; }, 3000);
+      const keys = Object.keys(tmpl);
+      if (!keys.length) { btn.textContent = 'No templates saved'; setTimeout(() => { btn.textContent = '⚡ Fill'; }, 3000); return; }
+      showTemplatePicker(tmpl, field);
       return;
     }
     setDescription(field, template);

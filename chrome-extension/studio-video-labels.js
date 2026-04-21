@@ -242,6 +242,7 @@ function createLabelBadge(initialValue, videoId, initialColorKey) {
     inputRow.appendChild(confirmBtn);
     dropdown.appendChild(inputRow);
 
+    dropdown.addEventListener('click', stopEvent);
     document.body.appendChild(dropdown);
     positionDropdown(dropdown, badge);
     input.focus();
