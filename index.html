@@ -2360,7 +2360,10 @@ select.ig-input { cursor: pointer; }
 <script>
 // ── Storage ──────────────────────────────────────────────────────────
 function loadNiches() { try { return JSON.parse(localStorage.getItem('niches') || '[]'); } catch { return []; } }
-function saveNiches(n) { localStorage.setItem('niches', JSON.stringify(n)); }
+function saveNiches(n) {
+  localStorage.setItem('niches', JSON.stringify(n));
+  if (window.syncDataToFirestore) window.syncDataToFirestore('niches', n);
+}
 
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem('settings') || '{}'); } catch { return {}; }
@@ -4555,6 +4558,7 @@ let trackerMinRatio = 2;
 
 function trackerSave() {
   localStorage.setItem('trackerGroups', JSON.stringify(trackerGroups));
+  if (window.syncDataToFirestore) window.syncDataToFirestore('trackerGroups', trackerGroups);
   // Keep chrome.storage in sync so the YouTube content script can read groups
   if (typeof chrome !== 'undefined' && chrome.storage) {
     const slim = trackerGroups.map(({ id, name }) => ({ id, name }));
@@ -5337,12 +5341,21 @@ if (niches.length) igSelectChannel(niches[0].id);
     }
   };
 
-  async function loadSettingsFromFirestore(uid) {
+  // Debounced per-field sync — avoids rapid writes on bulk operations
+  const _fsDebounce = {};
+  window.syncDataToFirestore = (field, value) => {
+    if (!window._fbUser) return;
+    clearTimeout(_fsDebounce[field]);
+    _fsDebounce[field] = setTimeout(async () => {
+      try {
+        await setDoc(doc(db, 'users', window._fbUser.uid), { [field]: value }, { merge: true });
+      } catch (e) { console.error('Firestore sync error', field, e); }
+    }, 1500);
+  };
+
+  async function loadAllFromFirestore(uid) {
     const snap = await getDoc(doc(db, 'users', uid));
-    if (snap.exists() && snap.data().settings) {
-      return snap.data().settings;
-    }
-    return null;
+    return snap.exists() ? snap.data() : {};
   }
 
   onAuthStateChanged(auth, async (user) => {
@@ -5372,22 +5385,50 @@ if (niches.length) igSelectChannel(niches[0].id);
         document.getElementById('ig-auth-name').textContent = user.displayName || user.email;
       }
 
-      // Load settings from Firestore
-      loadingEl.innerHTML = '<div class="step-spinner"></div><span>Loading your settings…</span>';
+      // Load all user data from Firestore
+      loadingEl.innerHTML = '<div class="step-spinner"></div><span>Loading your data…</span>';
       loadingEl.style.display = 'flex';
       cardEl.style.display = 'none';
 
-      const cloudSettings = await loadSettingsFromFirestore(user.uid);
-      if (cloudSettings) {
-        window.appSettings = Object.assign(window.appSettings || {}, cloudSettings);
+      const cloud = await loadAllFromFirestore(user.uid);
+
+      // Settings
+      if (cloud.settings) {
+        window.appSettings = Object.assign(window.appSettings || {}, cloud.settings);
         localStorage.setItem('settings', JSON.stringify(window.appSettings));
-        if (window.appSettings.theme) {
-          document.body.classList.toggle('light-theme', window.appSettings.theme === 'light');
-        }
+        if (window.appSettings.theme) document.body.classList.toggle('light-theme', window.appSettings.theme === 'light');
         if (typeof window.renderProviderPill === 'function') window.renderProviderPill();
-        syncMsg.textContent = 'Settings synced';
-        setTimeout(() => { syncMsg.textContent = ''; }, 2000);
       }
+
+      // Channels (niches)
+      if (cloud.niches?.length) {
+        localStorage.setItem('niches', JSON.stringify(cloud.niches));
+        window.niches = cloud.niches;
+        if (typeof renderSidebar === 'function') renderSidebar();
+      }
+
+      // Tracker groups
+      if (cloud.trackerGroups?.length) {
+        localStorage.setItem('trackerGroups', JSON.stringify(cloud.trackerGroups));
+        window.trackerGroups = cloud.trackerGroups;
+        if (typeof trackerRenderSidebar === 'function') trackerRenderSidebar();
+      }
+
+      // Bookmarks
+      if (cloud.bookmarks?.length) {
+        localStorage.setItem('nfBookmarks', JSON.stringify(cloud.bookmarks));
+        window.bookmarks = cloud.bookmarks;
+      }
+      if (cloud.bookmarkFolders?.length) {
+        localStorage.setItem('nfBookmarkFolders', JSON.stringify(cloud.bookmarkFolders));
+        window.bookmarkFolders = cloud.bookmarkFolders;
+      }
+      if (cloud.bookmarks?.length || cloud.bookmarkFolders?.length) {
+        if (typeof bookmarksRenderAll === 'function') bookmarksRenderAll();
+      }
+
+      syncMsg.textContent = 'Synced';
+      setTimeout(() => { syncMsg.textContent = ''; }, 2000);
 
       // Hide login gate, show app
       gate.classList.add('hidden');
@@ -5559,6 +5600,10 @@ let bmCurrentFolder = 'all'; // 'all' or folder id
 function bookmarksSave() {
   localStorage.setItem('nfBookmarks', JSON.stringify(bookmarks));
   localStorage.setItem('nfBookmarkFolders', JSON.stringify(bookmarkFolders));
+  if (window.syncDataToFirestore) {
+    window.syncDataToFirestore('bookmarks', bookmarks);
+    window.syncDataToFirestore('bookmarkFolders', bookmarkFolders);
+  }
   // Keep chrome.storage in sync so the YouTube content script can read folders
   if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.set({ tsBookmarkFolders: bookmarkFolders });

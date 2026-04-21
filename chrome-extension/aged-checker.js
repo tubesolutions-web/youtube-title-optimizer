@@ -56,7 +56,7 @@ const channelDetector = (() => {
     const url = getAboutUrl();
     if (!url) return null;
     try {
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(url, { credentials: 'include', headers: { 'Accept-Language': 'en-US,en;q=0.9' } });
       if (!res.ok) return null;
       const html = await res.text();
       for (const p of [
