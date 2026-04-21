@@ -95,25 +95,6 @@ async function injectButton() {
   const ce = getDescriptionField();
   if (!ce) return;
 
-  // Find the label element that contains "Beschrijving" / "Description"
-  // Walk up from the field and look for a label row
-  function findLabelRow() {
-    let node = ce.parentElement;
-    for (let i = 0; i < 10; i++) {
-      if (!node) break;
-      // Look for any element whose direct text is the description label
-      const all = node.querySelectorAll('label, span, div');
-      for (const el of all) {
-        const t = (el.childNodes[0]?.textContent || '').trim().toLowerCase();
-        if (t === 'beschrijving' || t === 'description') return el.parentElement || el;
-      }
-      node = node.parentElement;
-    }
-    return null;
-  }
-
-  const labelRow = findLabelRow();
-
   const btn = document.createElement('button');
   btn.id = BTN_ID;
   btn.textContent = '⚡ Fill';
@@ -134,13 +115,98 @@ async function injectButton() {
   btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#6d4faa'; btn.style.color = '#c4b0ff'; });
   btn.addEventListener('mouseleave', () => { btn.style.borderColor = '#3a3a3a'; btn.style.color = '#aaa'; });
 
+  function showAddTemplateModal(onSaved) {
+    document.getElementById('ts-tmpl-modal-overlay')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ts-tmpl-modal-overlay';
+    Object.assign(overlay.style, {
+      position: 'fixed', inset: '0', zIndex: '999999',
+      background: 'rgba(0,0,0,0.6)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+    });
+
+    const modal = document.createElement('div');
+    Object.assign(modal.style, {
+      background: '#1a1a2e', border: '1px solid #6d4faa', borderRadius: '12px',
+      boxShadow: '0 12px 40px rgba(0,0,0,0.8)', padding: '24px', width: '480px',
+      maxWidth: '90vw', fontFamily: 'Roboto, sans-serif', display: 'flex',
+      flexDirection: 'column', gap: '14px',
+    });
+
+    const title = document.createElement('div');
+    title.textContent = 'Add description template';
+    Object.assign(title.style, { color: '#e0d0ff', fontSize: '15px', fontWeight: '700' });
+
+    const nameInput = document.createElement('input');
+    nameInput.placeholder = 'Template name (e.g. Watches Explained)';
+    Object.assign(nameInput.style, {
+      background: '#111', border: '1px solid #4a3a7a', borderRadius: '6px',
+      color: '#e0d0ff', fontSize: '13px', padding: '8px 10px', outline: 'none',
+      fontFamily: 'Roboto, sans-serif', width: '100%', boxSizing: 'border-box',
+    });
+
+    const bodyInput = document.createElement('textarea');
+    bodyInput.placeholder = 'Paste your description template here…';
+    bodyInput.rows = 8;
+    Object.assign(bodyInput.style, {
+      background: '#111', border: '1px solid #4a3a7a', borderRadius: '6px',
+      color: '#e0d0ff', fontSize: '12px', padding: '8px 10px', outline: 'none',
+      fontFamily: 'Roboto, sans-serif', width: '100%', boxSizing: 'border-box',
+      resize: 'vertical', lineHeight: '1.5',
+    });
+
+    const btnRow = document.createElement('div');
+    Object.assign(btnRow.style, { display: 'flex', justifyContent: 'flex-end', gap: '10px' });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'Cancel';
+    Object.assign(cancelBtn.style, {
+      background: 'none', border: '1px solid #3a3a3a', borderRadius: '6px',
+      color: '#aaa', fontSize: '12px', padding: '6px 16px', cursor: 'pointer',
+      fontFamily: 'Roboto, sans-serif',
+    });
+    cancelBtn.addEventListener('click', () => overlay.remove());
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'Save template';
+    Object.assign(saveBtn.style, {
+      background: '#6d4faa', border: 'none', borderRadius: '6px',
+      color: '#fff', fontSize: '12px', fontWeight: '700',
+      padding: '6px 16px', cursor: 'pointer', fontFamily: 'Roboto, sans-serif',
+    });
+    saveBtn.addEventListener('click', async () => {
+      const name = nameInput.value.trim();
+      const body = bodyInput.value.trim();
+      if (!name || !body) { nameInput.style.borderColor = name ? '#4a3a7a' : '#f87171'; bodyInput.style.borderColor = body ? '#4a3a7a' : '#f87171'; return; }
+      const d = await chrome.storage.sync.get(AD_KEY);
+      const tmpl = d[AD_KEY] || {};
+      tmpl[name] = body;
+      await chrome.storage.sync.set({ [AD_KEY]: tmpl });
+      overlay.remove();
+      onSaved(tmpl);
+    });
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    modal.appendChild(title);
+    modal.appendChild(nameInput);
+    modal.appendChild(bodyInput);
+    modal.appendChild(btnRow);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    nameInput.focus();
+  }
+
   function showTemplatePicker(tmpl, field) {
     document.getElementById('ts-tmpl-picker')?.remove();
     const keys = Object.keys(tmpl);
     const picker = document.createElement('div');
     picker.id = 'ts-tmpl-picker';
     Object.assign(picker.style, {
-      position: 'absolute', zIndex: '99999', background: '#1a1a2e',
+      position: 'fixed', zIndex: '99999', background: '#1a1a2e',
       border: '1px solid #6d4faa', borderRadius: '8px',
       boxShadow: '0 6px 20px rgba(0,0,0,0.6)', minWidth: '160px', overflow: 'hidden',
       fontFamily: 'Roboto, sans-serif',
@@ -163,8 +229,24 @@ async function injectButton() {
       });
       picker.appendChild(item);
     });
+
+    const addItem = document.createElement('div');
+    addItem.textContent = '+ Add template';
+    Object.assign(addItem.style, {
+      padding: '8px 14px', cursor: 'pointer', fontSize: '12px',
+      color: '#a78bfa', borderTop: keys.length ? '1px solid #3a2a6a' : 'none',
+    });
+    addItem.addEventListener('mouseenter', () => addItem.style.background = '#2d1f4a');
+    addItem.addEventListener('mouseleave', () => addItem.style.background = '');
+    addItem.addEventListener('mousedown', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      picker.remove();
+      showAddTemplateModal((updatedTmpl) => showTemplatePicker(updatedTmpl, field));
+    });
+    picker.appendChild(addItem);
+
     const rect = btn.getBoundingClientRect();
-    Object.assign(picker.style, { position: 'fixed', top: (rect.bottom + 4) + 'px', left: rect.left + 'px' });
+    Object.assign(picker.style, { top: (rect.bottom + 4) + 'px', left: rect.left + 'px' });
     document.body.appendChild(picker);
     setTimeout(() => document.addEventListener('click', () => picker.remove(), { once: true }), 0);
   }
@@ -188,13 +270,18 @@ async function injectButton() {
     setTimeout(() => { btn.textContent = '⚡ Fill'; }, 2000);
   });
 
-  if (labelRow) {
-    Object.assign(labelRow.style, { display: 'flex', alignItems: 'center', flexWrap: 'wrap' });
-    labelRow.appendChild(btn);
+  // Place button below the description field
+  const fieldContainer = ce.closest('ytcp-social-suggestions-textbox') ||
+                         ce.closest('[class*="description"]') ||
+                         ce.parentElement;
+  const insertAfter = fieldContainer?.closest('ytcp-form-input-container') || fieldContainer;
+  if (insertAfter?.parentElement) {
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, { display: 'flex', marginTop: '6px' });
+    wrapper.appendChild(btn);
+    insertAfter.after(wrapper);
   } else {
-    // Fallback: insert right above the description field
-    const parent = ce.closest('ytcp-social-suggestions-textbox')?.parentElement || ce.parentElement;
-    parent?.insertBefore(btn, parent.firstChild);
+    ce.parentElement?.appendChild(btn);
   }
 }
 
