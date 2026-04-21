@@ -5511,11 +5511,31 @@ if (niches.length) igSelectChannel(niches[0].id);
     </div>
 
     <!-- Reference videos -->
-    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px">
-      <div style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Reference Videos</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.05em">Reference Videos</div>
+        <button onclick="sgToggleProfiles()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg-muted);font-size:11px;font-weight:500;padding:3px 10px;cursor:pointer;transition:border-color .15s,color .15s;font-family:inherit" onmouseenter="this.style.borderColor='var(--primary)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--fg-muted)'">Profiles</button>
+      </div>
       <div style="font-size:12px;color:var(--fg-faint);margin-bottom:12px">Paste up to 6 YouTube links. The tool extracts their transcripts to learn structure, hooks & retention tactics.</div>
       <div id="sg-url-list" style="display:flex;flex-direction:column;gap:8px"></div>
       <button id="sg-add-url-btn" onclick="sgAddUrlRow()" style="margin-top:10px;background:none;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);color:var(--fg-faint);font-size:12px;padding:6px 14px;cursor:pointer;transition:color .15s,border-color .15s" onmouseenter="this.style.color='var(--fg-muted)';this.style.borderColor='var(--primary)'" onmouseleave="this.style.color='var(--fg-faint)';this.style.borderColor='var(--border-strong)'">+ Add video URL</button>
+
+      <!-- Profiles dropdown -->
+      <div id="sg-profiles-panel" style="display:none;position:absolute;top:46px;right:20px;width:300px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:100;overflow:hidden">
+        <div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.05em">Saved Profiles</span>
+          <button onclick="sgToggleProfiles()" style="background:none;border:none;color:var(--fg-faint);font-size:16px;cursor:pointer;padding:0;line-height:1" onmouseenter="this.style.color='var(--fg)'" onmouseleave="this.style.color='var(--fg-faint)'">×</button>
+        </div>
+        <div id="sg-profiles-list" style="max-height:220px;overflow-y:auto;padding:8px"></div>
+        <div style="padding:10px 14px;border-top:1px solid var(--border)">
+          <div id="sg-save-profile-form" style="display:none;gap:6px;align-items:center;margin-bottom:8px">
+            <input id="sg-profile-name-input" type="text" placeholder="Profile name…" style="flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:12px;padding:6px 10px;outline:none;font-family:inherit" onkeydown="if(event.key==='Enter')sgConfirmSaveProfile();if(event.key==='Escape')sgHideSaveForm()" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
+            <button onclick="sgConfirmSaveProfile()" style="background:var(--primary);border:none;border-radius:var(--radius-sm);color:var(--primary-fg);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap;font-family:inherit">Save</button>
+            <button onclick="sgHideSaveForm()" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg-faint);font-size:12px;padding:6px 8px;cursor:pointer;font-family:inherit">×</button>
+          </div>
+          <button onclick="sgShowSaveForm()" id="sg-show-save-btn" style="width:100%;background:none;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);color:var(--fg-faint);font-size:12px;padding:6px 14px;cursor:pointer;transition:color .15s,border-color .15s;font-family:inherit" onmouseenter="this.style.color='var(--fg-muted)';this.style.borderColor='var(--primary)'" onmouseleave="this.style.color='var(--fg-faint)';this.style.borderColor='var(--border-strong)'">+ Save current URLs as profile</button>
+        </div>
+      </div>
     </div>
 
     <!-- Title + word count row -->
@@ -5528,6 +5548,13 @@ if (niches.length) igSelectChannel(niches[0].id);
         <label style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Word Count</label>
         <input id="sg-wordcount" type="number" value="1500" min="200" max="10000" step="100" style="width:100%;box-sizing:border-box;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:13px;padding:9px 12px;outline:none;font-family:inherit" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'">
       </div>
+    </div>
+
+    <!-- Reference script -->
+    <div>
+      <label style="font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px">Reference Script <span style="color:var(--fg-faint);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div style="font-size:12px;color:var(--fg-faint);margin-bottom:8px">Paste an existing script you want to replicate. The tool will generate a new script on the same topic &amp; style, using the reference videos for structure.</div>
+      <textarea id="sg-ref-script" rows="6" placeholder="Paste a script here to generate a similar one…" style="width:100%;box-sizing:border-box;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg);font-size:13px;padding:10px 12px;outline:none;font-family:inherit;resize:vertical;line-height:1.6" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"></textarea>
     </div>
 
     <!-- Research notes -->
@@ -6705,16 +6732,17 @@ async function sgGenerate() {
   const urls = [...document.querySelectorAll('#sg-url-list input')].map(i => i.value.trim()).filter(Boolean);
   const title = document.getElementById('sg-title').value.trim();
   const research = document.getElementById('sg-research').value.trim();
+  const refScript = document.getElementById('sg-ref-script').value.trim();
   const wordCount = parseInt(document.getElementById('sg-wordcount').value) || 1500;
 
   if (!title) { sgSetStatus('Please enter a video title.', true); return; }
-  if (!urls.length) { sgSetStatus('Add at least one reference video URL.', true); return; }
+  if (!urls.length && !refScript) { sgSetStatus('Add at least one reference video URL or paste a reference script.', true); return; }
 
   const btn = document.getElementById('sg-generate-btn');
   btn.disabled = true;
   btn.textContent = 'Generating…';
   document.getElementById('sg-copy-btn').style.display = 'none';
-  document.getElementById('sg-output').innerHTML = '<div style="color:var(--fg-faint);font-size:13px">Fetching transcripts…</div>';
+  document.getElementById('sg-output').innerHTML = `<div style="color:var(--fg-faint);font-size:13px">${urls.length ? 'Fetching transcripts…' : 'Preparing script…'}</div>`;
 
   // Fetch transcripts
   const transcripts = [];
@@ -6730,7 +6758,7 @@ async function sgGenerate() {
     }
   }
 
-  if (!transcripts.length) {
+  if (!transcripts.length && !refScript) {
     sgSetStatus('Could not fetch any transcripts. Make sure the videos have captions enabled.', true);
     btn.disabled = false; btn.textContent = 'Generate Script';
     return;
@@ -6739,25 +6767,18 @@ async function sgGenerate() {
   sgSetStatus('Generating script with Claude…');
   document.getElementById('sg-output').innerHTML = '<div style="color:var(--fg-faint);font-size:13px">Writing your script…</div>';
 
-  const transcriptBlock = transcripts.map((t, i) =>
-    `--- REFERENCE VIDEO ${i+1} (${t.videoId}) ---\n${t.text}`
-  ).join('\n\n');
+  const transcriptBlock = transcripts.length
+    ? transcripts.map((t, i) => `--- REFERENCE VIDEO ${i+1} (${t.videoId}) ---\n${t.text}`).join('\n\n')
+    : '';
 
-  const systemPrompt = `You are an expert YouTube script writer. Analyse the provided reference video transcripts carefully, then write a brand-new script for the given title.
+  const hasRefVideos = transcriptBlock.length > 0;
+  const hasRefScript = refScript.length > 0;
 
-When analysing the references, pay attention to:
-- How the hook/intro grabs attention in the first 30 seconds
-- The pacing and structure of the main body
-- Retention tactics (cliffhangers, curiosity gaps, list reveals, etc.)
-- How they transition between points
-- The outro / call-to-action style
+  const systemPrompt = `You are an expert YouTube script writer.${hasRefVideos ? ` Analyse the provided reference video transcripts to deeply understand the content style: how the hook/intro grabs attention in the first 30 seconds, the pacing and structure of the main body, retention tactics (cliffhangers, curiosity gaps, list reveals, etc.), how they transition between points, and the outro / call-to-action style.` : ''}${hasRefScript ? ` You are also given a reference script — use it as the content and topic blueprint: cover the same subject matter, angle, and key points, but write it as a completely fresh, original script in your own words.` : ''}
 
-Then write a COMPLETE, READY-TO-READ script — no placeholders, no notes, no meta-commentary. Write it exactly as the creator would speak it on camera.`;
+Write a COMPLETE, READY-TO-READ script — no placeholders, no notes, no meta-commentary. Write it exactly as the creator would speak it on camera.`;
 
-  const userPrompt = `REFERENCE TRANSCRIPTS:
-${transcriptBlock}
-
-${research ? `RESEARCH NOTES / FACTS TO INCLUDE:\n${research}\n\n` : ''}VIDEO TITLE: ${title}
+  const userPrompt = `${hasRefVideos ? `REFERENCE TRANSCRIPTS (study for structure & style only):\n${transcriptBlock}\n\n` : ''}${hasRefScript ? `REFERENCE SCRIPT (use as content/topic blueprint — rewrite in a fresh, original way):\n${refScript}\n\n` : ''}${research ? `RESEARCH NOTES / FACTS TO INCLUDE:\n${research}\n\n` : ''}VIDEO TITLE: ${title}
 
 TARGET LENGTH: approximately ${wordCount} words
 
@@ -6792,6 +6813,99 @@ Write the complete script now. Start immediately with the hook — no preamble.`
   btn.disabled = false;
   btn.textContent = 'Generate Script';
 }
+
+// ── Script Generator — Video Profiles ────────────────────────────────────────
+
+function sgGetProfiles() {
+  try { return JSON.parse(localStorage.getItem('sgVideoProfiles') || '[]'); } catch { return []; }
+}
+
+function sgSaveProfiles(profiles) {
+  localStorage.setItem('sgVideoProfiles', JSON.stringify(profiles));
+}
+
+function sgToggleProfiles() {
+  const panel = document.getElementById('sg-profiles-panel');
+  const open = panel.style.display !== 'none';
+  if (open) {
+    panel.style.display = 'none';
+  } else {
+    sgRenderProfilesList();
+    panel.style.display = 'block';
+  }
+}
+
+function sgRenderProfilesList() {
+  const list = document.getElementById('sg-profiles-list');
+  const profiles = sgGetProfiles();
+  if (!profiles.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--fg-faint);padding:8px 6px">No saved profiles yet.</div>';
+    return;
+  }
+  list.innerHTML = profiles.map(p => `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 4px;border-radius:var(--radius-sm)" onmouseenter="this.style.background='var(--bg-hover)'" onmouseleave="this.style.background='transparent'">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+        <div style="font-size:11px;color:var(--fg-faint)">${p.urls.length} video${p.urls.length !== 1 ? 's' : ''}</div>
+      </div>
+      <button onclick="sgLoadProfile('${p.id}')" style="background:none;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--fg-muted);font-size:11px;padding:3px 8px;cursor:pointer;font-family:inherit;white-space:nowrap;transition:border-color .15s,color .15s" onmouseenter="this.style.borderColor='var(--primary)';this.style.color='var(--fg)'" onmouseleave="this.style.borderColor='var(--border)';this.style.color='var(--fg-muted)'">Load</button>
+      <button onclick="sgDeleteProfile('${p.id}')" style="background:none;border:none;color:var(--fg-faint);font-size:14px;cursor:pointer;padding:0 2px;line-height:1" title="Delete" onmouseenter="this.style.color='var(--destructive)'" onmouseleave="this.style.color='var(--fg-faint)'">×</button>
+    </div>`).join('');
+}
+
+function sgShowSaveForm() {
+  document.getElementById('sg-save-profile-form').style.display = 'flex';
+  document.getElementById('sg-show-save-btn').style.display = 'none';
+  document.getElementById('sg-profile-name-input').value = '';
+  document.getElementById('sg-profile-name-input').focus();
+}
+
+function sgHideSaveForm() {
+  document.getElementById('sg-save-profile-form').style.display = 'none';
+  document.getElementById('sg-show-save-btn').style.display = 'block';
+}
+
+function sgConfirmSaveProfile() {
+  const name = document.getElementById('sg-profile-name-input').value.trim();
+  if (!name) return;
+  const urls = [...document.querySelectorAll('#sg-url-list input')].map(i => i.value.trim()).filter(Boolean);
+  if (!urls.length) { alert('Add at least one video URL before saving a profile.'); return; }
+  const profiles = sgGetProfiles();
+  profiles.push({ id: Date.now().toString(), name, urls });
+  sgSaveProfiles(profiles);
+  sgHideSaveForm();
+  sgRenderProfilesList();
+}
+
+function sgLoadProfile(id) {
+  const profile = sgGetProfiles().find(p => p.id === id);
+  if (!profile) return;
+  // Clear existing rows
+  document.getElementById('sg-url-list').innerHTML = '';
+  document.getElementById('sg-add-url-btn').style.display = 'block';
+  // Add a row for each saved URL
+  profile.urls.forEach(url => {
+    sgAddUrlRow();
+    const inputs = document.querySelectorAll('#sg-url-list input');
+    inputs[inputs.length - 1].value = url;
+  });
+  document.getElementById('sg-profiles-panel').style.display = 'none';
+}
+
+function sgDeleteProfile(id) {
+  const updated = sgGetProfiles().filter(p => p.id !== id);
+  sgSaveProfiles(updated);
+  sgRenderProfilesList();
+}
+
+// Close profiles panel when clicking outside
+document.addEventListener('click', e => {
+  const panel = document.getElementById('sg-profiles-panel');
+  if (!panel || panel.style.display === 'none') return;
+  if (!panel.contains(e.target) && !e.target.closest('[onclick="sgToggleProfiles()"]')) {
+    panel.style.display = 'none';
+  }
+});
 
 // Init 3 URL rows on page load
 (function sgInit() {
