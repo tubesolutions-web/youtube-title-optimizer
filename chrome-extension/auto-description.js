@@ -35,14 +35,21 @@ function isEmpty(ce) {
 }
 
 function setDescription(ce, text) {
+  ce.click();
   ce.focus();
   document.execCommand('selectAll', false, null);
-  const ok = document.execCommand('insertText', false, text);
-  if (!ok) {
-    ce.innerText = text;
+  document.execCommand('insertText', false, text);
+  // Verify execCommand actually inserted (returns true but silently fails in some shadow DOM setups)
+  if (!(ce.innerText || ce.textContent || '').trim()) {
+    ce.innerHTML = '';
+    text.split('\n').forEach((line, i) => {
+      if (i > 0) ce.appendChild(document.createElement('br'));
+      if (line) ce.appendChild(document.createTextNode(line));
+    });
+    ce.focus();
+    ce.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true, inputType: 'insertFromPaste', data: text }));
+    ce.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
   }
-  ce.dispatchEvent(new InputEvent('input', { bubbles: true, composed: true, inputType: 'insertText', data: text }));
-  ce.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
 }
 
 function getChannelName() {

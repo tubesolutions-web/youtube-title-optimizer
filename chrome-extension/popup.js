@@ -173,6 +173,11 @@ channelSelect.addEventListener('change', () => {
 });
 
 saveBtn.addEventListener('click', async () => {
+  if (!currentChannel) {
+    const pending = newChannelInput.value.trim();
+    if (!pending) return;
+    await confirmAddChannel();
+  }
   if (!currentChannel) return;
   templates[currentChannel] = input.value;
   await chrome.storage.sync.set({ [STORAGE_KEY]: templates });
