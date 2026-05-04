@@ -5308,10 +5308,6 @@ REASON: one sentence why it will perform right now
   }
 }
 
-// Keep ig sidebar in sync when channels are added/deleted
-const _origRenderSidebar = renderSidebar;
-renderSidebar = function() { _origRenderSidebar(); igRenderSidebar(); };
-
 igRenderSidebar();
 if (niches.length) igSelectChannel(niches[0].id);
 </script>
