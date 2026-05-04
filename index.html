@@ -4581,8 +4581,11 @@ function trackerSave() {
   localStorage.setItem('trackerGroups', JSON.stringify(trackerGroups));
   if (window.syncDataToFirestore) window.syncDataToFirestore('trackerGroups', trackerGroups);
   // Keep chrome.storage in sync so the YouTube content script can read groups
-  if (typeof chrome !== 'undefined' && chrome.storage) {
-    const slim = trackerGroups.map(({ id, name }) => ({ id, name }));
+  const slim = trackerGroups.map(({ id, name }) => ({ id, name }));
+  if (typeof tsStorageSet === 'function') {
+    tsStorageSet({ tsTrackerGroups: slim });
+    tsStorageSet({ tsTrackedChannelUrls: trackerGroups.flatMap(g => (g.channels || []).map(c => c.url)) });
+  } else if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.set({ tsTrackerGroups: slim });
   }
 }
@@ -5714,7 +5717,9 @@ function bookmarksSave() {
     window.syncDataToFirestore('bookmarkFolders', bookmarkFolders);
   }
   // Keep chrome.storage in sync so the YouTube content script can read folders
-  if (typeof chrome !== 'undefined' && chrome.storage) {
+  if (typeof tsStorageSet === 'function') {
+    tsStorageSet({ tsBookmarkFolders: bookmarkFolders });
+  } else if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.set({ tsBookmarkFolders: bookmarkFolders });
   }
 }
@@ -6203,6 +6208,11 @@ bookmarksEnrich();
       setTimeout(() => { window.removeEventListener('message', handler); resolve(); }, 3000);
     });
   }
+
+  // Expose for bookmarksSave / trackerSave so changes propagate to the extension.
+  window.tsStorageGet = tsStorageGet;
+  window.tsStorageSet = tsStorageSet;
+  window.tsStorageRemove = tsStorageRemove;
 
   async function syncPending() {
     if (!bridgeReady) return;
