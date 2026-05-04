@@ -5960,7 +5960,7 @@ function bookmarksRenderFolderList() {
   for (const f of bookmarkFolders) {
     const count = bookmarks.filter(b => b.folderId === f.id).length;
     html += `<div class="bm-folder-item ${bmCurrentFolder === f.id ? 'active' : ''}" onclick="bmSelectFolder('${f.id}')">
-      <span class="bm-folder-item-name">📁 ${esc(f.name)}</span>
+      <span class="bm-folder-item-name" ondblclick="event.stopPropagation();bmRenameFolder('${f.id}',event)" title="Double-click to rename">📁 ${esc(f.name)}</span>
       <span class="bm-folder-count">${count}</span>
       <span class="bm-folder-rename" onclick="bmRenameFolder('${f.id}',event)" title="Rename folder">✏</span>
       <span class="bm-folder-delete" onclick="bmDeleteFolder('${f.id}',event)" title="Delete folder">✕</span>
@@ -6053,10 +6053,13 @@ function bookmarksRender() {
         <button class="bm-folder-card-btn" onclick="bmCopyFolder('${esc(folderId)}')" title="Duplicate folder">⎘ Copy</button>
         <button class="bm-folder-card-btn danger" onclick="bmDeleteFolder('${esc(folderId)}',event)" title="Delete folder">✕</button>
       </div>` : '';
+    const nameAttrs = folderId
+      ? `ondblclick="event.stopPropagation();bmRenameFolder('${esc(folderId)}',event)" title="Double-click to rename"`
+      : '';
     return `<div class="bm-folder-card" onclick="${onclick}">
       <div class="bm-folder-card-thumbs bm-folder-thumbs-${Math.min(videos.length,4)}">${previews}${extra}</div>
       <div class="bm-folder-card-footer">
-        <span class="bm-folder-card-name">📁 ${esc(name)}</span>
+        <span class="bm-folder-card-name" ${nameAttrs}>📁 ${esc(name)}</span>
         <span class="bm-folder-card-count">${videos.length} video${videos.length !== 1 ? 's' : ''}</span>
         ${actions}
       </div>
