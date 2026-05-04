@@ -88,22 +88,25 @@ const channelDetector = (() => {
   }
 
   const SIDEBAR_SELECTORS = '#guide, #sections, ytd-mini-guide-renderer, #masthead';
+  const NON_HEADER_SELECTORS = 'ytd-channel-name, ytd-watch-metadata, ytd-video-primary-info-renderer, ytd-rich-grid-media, ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, #related, #secondary';
 
   function findTitleElement() {
     const directSelectors = [
+      'yt-page-header-view-model h1.dynamic-text-view-model-wiz__h1',
+      'yt-page-header-view-model h1',
+      'yt-dynamic-text-view-model h1',
+      'h1.dynamicTextViewModelH1',
       '#page-header ytd-page-header-renderer #title h1',
       '#page-header ytd-page-header-renderer #title yt-formatted-string',
       'ytd-c4-tabbed-header-renderer #channel-name h1',
       'ytd-c4-tabbed-header-renderer #channel-name yt-formatted-string',
-      'ytd-channel-name #text.ytd-channel-name',
-      '#channel-name #text',
       '#inner-header-container h1',
       '#channel-header-container h1',
       '#header h1',
     ];
     for (const sel of directSelectors) {
       const el = document.querySelector(sel);
-      if (el && isVisible(el) && !el.closest(SIDEBAR_SELECTORS)) return el;
+      if (el && isVisible(el) && !el.closest(SIDEBAR_SELECTORS) && !el.closest(NON_HEADER_SELECTORS)) return el;
     }
     const expected = (document.querySelector('meta[property="og:title"]')?.content || document.title)
       .replace(/\s*-\s*YouTube\s*$/i, '').trim();
@@ -111,14 +114,14 @@ const channelDetector = (() => {
       let best = null, bestScore = -Infinity;
       document.querySelectorAll('h1, yt-formatted-string').forEach(el => {
         if (!isVisible(el) || el.innerText?.trim() !== expected) return;
-        if (el.closest(SIDEBAR_SELECTORS)) return;
+        if (el.closest(SIDEBAR_SELECTORS) || el.closest(NON_HEADER_SELECTORS)) return;
         const score = parseFloat(getComputedStyle(el).fontSize) * 10 + (el.tagName === 'H1' ? 100 : 0);
         if (score > bestScore) { bestScore = score; best = el; }
       });
       if (best) return best;
     }
     for (const el of document.querySelectorAll('h1')) {
-      if (isVisible(el) && !el.closest(SIDEBAR_SELECTORS)) return el;
+      if (isVisible(el) && !el.closest(SIDEBAR_SELECTORS) && !el.closest(NON_HEADER_SELECTORS)) return el;
     }
     return null;
   }
