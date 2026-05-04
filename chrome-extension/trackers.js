@@ -92,8 +92,13 @@ function openPickerPopup({ title, subtitle, items, onSelect, onNew }) {
   async function submitNew() {
     const name = newInput.value.trim();
     if (!name) return;
-    await onNew.create(name);
-    closePopup();
+    const created = await onNew.create(name);
+    if (onNew.keepOpen && created && created.id) {
+      newInput.value = '';
+      appendItemRow({ id: created.id, label: created.label || name });
+    } else {
+      closePopup();
+    }
   }
 
   newBtn.addEventListener('click', (e) => { e.stopPropagation(); submitNew(); });
@@ -110,7 +115,7 @@ function openPickerPopup({ title, subtitle, items, onSelect, onNew }) {
   const list = document.createElement('div');
   list.className = 'ts-modal-list';
 
-  items.forEach(item => {
+  function appendItemRow(item) {
     const row = document.createElement('label');
     row.className = 'ts-modal-row';
 
@@ -127,10 +132,12 @@ function openPickerPopup({ title, subtitle, items, onSelect, onNew }) {
       e.stopPropagation();
       if (item.id === '__new__') return;
       onSelect(item);
-      closePopup();
+      if (!onNew.keepOpen) closePopup();
     });
     list.appendChild(row);
-  });
+  }
+
+  items.forEach(appendItemRow);
 
   modal.appendChild(list);
   backdrop.appendChild(modal);
@@ -179,6 +186,7 @@ async function openBookmarkPicker(anchorEl, video) {
       }),
       onNew: {
         placeholder: 'New folder name…',
+        keepOpen: true,
         create: (name) => guardedStorage(async () => {
           const newFolder = { id: 'bmf_' + Date.now(), name };
           const { tsBookmarkFolders: existing = [] } = await chrome.storage.local.get('tsBookmarkFolders');
@@ -187,6 +195,7 @@ async function openBookmarkPicker(anchorEl, video) {
           await queueBookmark(video, newFolder.id, newFolder);
           showToast('🔖 Saved to new folder "' + name + '"');
           anchorEl.classList.add('ts-btn-active');
+          return { id: newFolder.id, label: name };
         }),
       },
     });
