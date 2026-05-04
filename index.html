@@ -6322,10 +6322,27 @@ bookmarksEnrich();
   }
 
   // Wait for the bridge content script to signal it's ready, then sync
-  window.addEventListener('message', ({ data }) => {
+  window.addEventListener('message', async ({ data }) => {
     if (data?.tsRes !== 'ready') return;
     bridgeReady = true;
-    // Push current folders + tracker groups so the content script can read them
+    // Pull folders/groups the user created via the YouTube picker before pushing
+    // ours, otherwise we'd overwrite them with whatever the website knows.
+    const { tsBookmarkFolders: extFolders = [], tsTrackerGroups: extGroups = [] } =
+      await tsStorageGet(['tsBookmarkFolders', 'tsTrackerGroups']);
+    let merged = false;
+    for (const f of extFolders) {
+      if (!bookmarkFolders.find(x => x.id === f.id)) { bookmarkFolders.push(f); merged = true; }
+    }
+    for (const g of extGroups) {
+      if (!trackerGroups.find(x => x.id === g.id)) { trackerGroups.push({ ...g, channels: [] }); merged = true; }
+    }
+    if (merged) {
+      bookmarksSave();
+      if (typeof trackerSave === 'function') trackerSave();
+      bookmarksRenderAll();
+      if (typeof trackerRenderSidebar === 'function') trackerRenderSidebar();
+    }
+    // Push merged folders + tracker groups so the content script can read them
     tsStorageSet({ tsBookmarkFolders: bookmarkFolders });
     tsStorageSet({ tsTrackerGroups: trackerGroups.map(({ id, name }) => ({ id, name })) });
     tsStorageSet({ tsTrackedChannelUrls: trackerGroups.flatMap(g => (g.channels || []).map(c => c.url)) });
