@@ -2528,6 +2528,19 @@ if (window.location.protocol === 'file:') {
   document.getElementById('file-protocol-banner').style.display = 'block';
 }
 
+// Browser back/forward navigation between SPA pages
+window.addEventListener('popstate', (e) => {
+  const page = e.state?.page;
+  if (page && document.getElementById('page-' + page)) {
+    switchPage(page, true);
+  }
+});
+// Seed the initial history entry so the first back press has somewhere to land
+if (!history.state || !history.state.page) {
+  const _initialPage = document.querySelector('.page.active')?.id?.replace('page-', '') || 'titles';
+  history.replaceState({ page: _initialPage }, '', location.href);
+}
+
 // ── Sidebar ───────────────────────────────────────────────────────────
 function renderSidebar() {
   const activePage = document.querySelector('.page.active')?.id;
@@ -3582,7 +3595,7 @@ document.getElementById('competitor-query')?.addEventListener('keydown', e => { 
 document.getElementById('channel-url')?.addEventListener('keydown', e => { if (e.key === 'Enter') analyzeChannel(); });
 
 // ── Page switcher ─────────────────────────────────────────────────────
-function switchPage(page) {
+function switchPage(page, fromPopState) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
 
@@ -3612,7 +3625,14 @@ function switchPage(page) {
   document.querySelectorAll('.top-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.page === page);
   });
-  history.replaceState(null, '', '/youtube-title-optimizer_V1/' + page);
+  const _newUrl = '/youtube-title-optimizer_V1/' + page;
+  if (fromPopState) {
+    // Navigation triggered by browser back/forward — don't touch history
+  } else if (history.state && history.state.page === page) {
+    history.replaceState({ page }, '', _newUrl);
+  } else {
+    history.pushState({ page }, '', _newUrl);
+  }
   // Re-render idea generator view when switching to it
   if (page === 'ideas') {
     igCurrentNicheId = null;
