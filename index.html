@@ -2502,6 +2502,21 @@ renderProviderPill();
 renderSidebar();
 if (niches.length) selectNiche(niches[0].id);
 setTimeout(checkStaleOnLoad, 1000);
+// URL slug ↔ internal page id map. Keep "titles" as-is for extension URL compatibility.
+const PAGE_TO_SLUG = {
+  titles: 'titles',
+  ideas: 'idea-generator',
+  thumbnail: 'thumbnail-generator',
+  'thumb-preview': 'thumbnail-preview',
+  niche: 'niche-finder',
+  tracker: 'channel-tracker',
+  bookmarks: 'bookmarks',
+  script: 'script-generator',
+};
+const SLUG_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_SLUG).map(([p, s]) => [s, p]));
+// Also accept old slugs (the internal page ids themselves) for any legacy bookmarked URLs.
+Object.keys(PAGE_TO_SLUG).forEach(p => { if (!(p in SLUG_TO_PAGE)) SLUG_TO_PAGE[p] = p; });
+
 // Pull params from current URL OR from the path stored by 404.html (which preserves the query string)
 const _redirectPath = sessionStorage.getItem('spa-redirect');
 if (_redirectPath) { sessionStorage.removeItem('spa-redirect'); }
@@ -2520,9 +2535,9 @@ if (_similarParam) setTimeout(() => { switchPage('niche'); nfFindSimilar(decodeU
 else if (_pageParam === 'titles') setTimeout(() => { switchPage('titles'); _applyTopicParam(); }, 400);
 else if (_pageParam === 'ideas') setTimeout(() => { switchPage('ideas'); }, 400);
 else {
-  const _validPages = ['titles','ideas','thumbnail','thumb-preview','niche','tracker','bookmarks'];
-  const _rawPath = (_redirectPathname || location.pathname).replace('/youtube-title-optimizer_V1/', '').replace(/^\//, '').split('/')[0].split('?')[0];
-  if (_validPages.includes(_rawPath)) setTimeout(() => { switchPage(_rawPath); if (_rawPath === 'titles') _applyTopicParam(); }, 100);
+  const _rawSlug = (_redirectPathname || location.pathname).replace('/youtube-title-optimizer_V1/', '').replace(/^\//, '').split('/')[0].split('?')[0];
+  const _matchedPage = SLUG_TO_PAGE[_rawSlug];
+  if (_matchedPage) setTimeout(() => { switchPage(_matchedPage); if (_matchedPage === 'titles') _applyTopicParam(); }, 100);
 }
 if (window.location.protocol === 'file:') {
   document.getElementById('file-protocol-banner').style.display = 'block';
@@ -3625,7 +3640,7 @@ function switchPage(page, fromPopState) {
   document.querySelectorAll('.top-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.page === page);
   });
-  const _newUrl = '/youtube-title-optimizer_V1/' + page;
+  const _newUrl = '/youtube-title-optimizer_V1/' + (PAGE_TO_SLUG[page] || page);
   if (fromPopState) {
     // Navigation triggered by browser back/forward — don't touch history
   } else if (history.state && history.state.page === page) {
