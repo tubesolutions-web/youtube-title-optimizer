@@ -2502,7 +2502,12 @@ renderProviderPill();
 renderSidebar();
 if (niches.length) selectNiche(niches[0].id);
 setTimeout(checkStaleOnLoad, 1000);
-const _urlParams = new URLSearchParams(location.search);
+// Pull params from current URL OR from the path stored by 404.html (which preserves the query string)
+const _redirectPath = sessionStorage.getItem('spa-redirect');
+if (_redirectPath) { sessionStorage.removeItem('spa-redirect'); }
+const _redirectSearch = _redirectPath && _redirectPath.includes('?') ? _redirectPath.slice(_redirectPath.indexOf('?')) : '';
+const _redirectPathname = _redirectPath ? _redirectPath.split('?')[0] : '';
+const _urlParams = new URLSearchParams(location.search || _redirectSearch);
 const _similarParam = _urlParams.get('similar');
 const _pageParam = _urlParams.get('page');
 const _topicParam = _urlParams.get('topic');
@@ -2516,10 +2521,7 @@ else if (_pageParam === 'titles') setTimeout(() => { switchPage('titles'); _appl
 else if (_pageParam === 'ideas') setTimeout(() => { switchPage('ideas'); }, 400);
 else {
   const _validPages = ['titles','ideas','thumbnail','thumb-preview','niche','tracker','bookmarks'];
-  // Restore page from clean URL path or from sessionStorage redirect (set by 404.html)
-  const _redirectPath = sessionStorage.getItem('spa-redirect');
-  if (_redirectPath) { sessionStorage.removeItem('spa-redirect'); }
-  const _rawPath = (_redirectPath || location.pathname).replace('/youtube-title-optimizer_V1/', '').replace(/^\//, '').split('/')[0];
+  const _rawPath = (_redirectPathname || location.pathname).replace('/youtube-title-optimizer_V1/', '').replace(/^\//, '').split('/')[0].split('?')[0];
   if (_validPages.includes(_rawPath)) setTimeout(() => { switchPage(_rawPath); if (_rawPath === 'titles') _applyTopicParam(); }, 100);
 }
 if (window.location.protocol === 'file:') {
@@ -4696,7 +4698,7 @@ function trackerRenderChannelChips(group) {
   }
   el.innerHTML = group.channels.map(ch => `
     <div style="display:inline-flex;align-items:center;gap:6px;background:#1a2a3a;border:1px solid #2a3a4a;border-radius:6px;padding:4px 10px;margin:0 6px 6px 0;font-size:13px;color:#80aaff">
-      <span>${esc(ch.name)}</span>
+      <a href="https://www.youtube.com/channel/${esc(ch.id)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;cursor:pointer" title="Open channel on YouTube">${esc(ch.name)}</a>
       <button onclick="trackerRemoveChannel('${ch.id}')" style="background:none;border:none;color:#445;cursor:pointer;font-size:15px;line-height:1;padding:0" title="Remove">×</button>
     </div>
   `).join('');
