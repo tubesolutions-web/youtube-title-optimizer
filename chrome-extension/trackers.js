@@ -282,33 +282,8 @@ async function queueTrackerChannel(video, groupId, groupName, newGroup = null) {
 
 // ── Generate titles picker ────────────────────────────────────────────────────
 
-async function openGenerateTitlesPicker(video) {
-  await guardedStorage(async () => {
-    const { tsTrackerGroups = [] } = await chrome.storage.local.get('tsTrackerGroups');
-
-    if (!tsTrackerGroups.length) {
-      window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}`, '_blank');
-      return;
-    }
-
-    const items = tsTrackerGroups.map(g => ({ id: g.id, label: g.name }));
-
-    openPickerPopup({
-      title: 'Generate titles',
-      subtitle: 'Pick a channel group for style reference',
-      items,
-      onSelect: (item) => {
-        window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(item.label)}`, '_blank');
-      },
-      onNew: {
-        placeholder: 'Or enter a channel name…',
-        create: (name) => {
-          window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(name)}`, '_blank');
-          closePopup();
-        },
-      },
-    });
-  });
+function openGenerateTitlesPicker(video) {
+  window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}`, '_blank');
 }
 
 // ── Copy title ────────────────────────────────────────────────────────────────
