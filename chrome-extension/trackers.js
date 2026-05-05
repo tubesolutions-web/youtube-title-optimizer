@@ -22,11 +22,23 @@ function extractFromRenderer(renderer) {
   if (!videoId) return null;
   const titleEl = renderer.querySelector('#video-title, yt-formatted-string#video-title');
   const channelLink = renderer.querySelector('ytd-channel-name a, #channel-name a');
-  const channelHref = channelLink?.getAttribute('href') || '';
+  let channelTitle = channelLink?.textContent.trim() || '';
+  let channelHref = channelLink?.getAttribute('href') || '';
+  // Channel pages render their video cards without per-card channel links
+  // (since every video belongs to the page's channel). Fall back to the
+  // page-level channel header so trackers can still capture the source.
+  if (!channelHref && /^\/((@|channel\/|c\/|user\/)[^/]+)/.test(location.pathname)) {
+    const m = location.pathname.match(/^\/((@|channel\/|c\/|user\/)[^/]+)/);
+    channelHref = '/' + m[1];
+    if (!channelTitle) {
+      const headerName = document.querySelector('yt-page-header-view-model h1, h1.dynamicTextViewModelH1, ytd-channel-name #text');
+      channelTitle = headerName?.textContent.trim() || (m[1].startsWith('@') ? m[1] : '');
+    }
+  }
   return {
     id: videoId,
     title: titleEl?.textContent.trim() || '',
-    channelTitle: channelLink?.textContent.trim() || '',
+    channelTitle,
     channelUrl: channelHref ? 'https://www.youtube.com' + channelHref : '',
     thumbnail: thumbUrl(videoId),
   };
