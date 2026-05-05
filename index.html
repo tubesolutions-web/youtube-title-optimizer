@@ -2528,10 +2528,18 @@ const _urlParams = new URLSearchParams(location.search || _redirectSearch);
 const _similarParam = _urlParams.get('similar');
 const _pageParam = _urlParams.get('page');
 const _topicParam = _urlParams.get('topic');
+// Store the topic globally so async cloud data loads (which can re-render and
+// indirectly clear the field) don't drop it. _applyTopicParam can be called
+// multiple times safely; the pending topic is cleared once the field is
+// non-empty after this function sets it.
+window.__pendingTopic = _topicParam ? decodeURIComponent(_topicParam) : null;
 function _applyTopicParam() {
-  if (!_topicParam) return;
+  if (!window.__pendingTopic) return;
   const el = document.getElementById('topic');
-  if (el) el.value = decodeURIComponent(_topicParam);
+  if (!el) return;
+  el.value = window.__pendingTopic;
+  el.focus();
+  window.__pendingTopic = null;
 }
 if (_similarParam) setTimeout(() => { switchPage('niche'); nfFindSimilar(decodeURIComponent(_similarParam)); }, 800);
 else if (_pageParam === 'titles') setTimeout(() => { switchPage('titles'); _applyTopicParam(); }, 400);
@@ -2603,9 +2611,15 @@ function selectNiche(id) {
   if (ownName) ownName.textContent = niche.name;
   const ownCount = document.getElementById('comp-own-channel-count');
   if (ownCount) ownCount.textContent = (niche.outliers || []).length + ' outliers';
-  document.getElementById('topic').value = '';
+  // Don't clobber a pending topic from the extension — only clear if there isn't one queued up.
+  if (!window.__pendingTopic) document.getElementById('topic').value = '';
   document.getElementById('results').innerHTML = '';
   clearError();
+  // If we had a pending topic, apply it now so it survives this selectNiche call.
+  if (window.__pendingTopic) {
+    document.getElementById('topic').value = window.__pendingTopic;
+    window.__pendingTopic = null;
+  }
 }
 
 function updateLastUpdatedUI(niche) {
