@@ -1789,7 +1789,7 @@ select.ig-input { cursor: pointer; }
     <!-- Generator -->
     <div class="view" id="view-gen">
       <div class="gen-header">
-        <h1 id="gen-niche-name">Channel</h1>
+        <h1 id="gen-niche-name" title="Click to rename" onclick="startRenameNiche()" style="cursor:text">Channel</h1>
         <div class="gen-header-right">
           <button class="btn-ghost" onclick="reanalyzeChannel()">Re-analyze</button>
           <button class="btn-ghost" onclick="openModal(currentNicheId)">Edit</button>
@@ -2643,6 +2643,44 @@ function updateLastUpdatedUI(niche) {
   document.getElementById('last-updated-label').textContent = timeAgo(niche.lastUpdated);
   const stale = isStale(niche);
   document.getElementById('stale-badge').style.display = stale ? '' : 'none';
+}
+
+function startRenameNiche() {
+  const niche = niches.find(n => n.id === currentNicheId);
+  if (!niche) return;
+  const h1 = document.getElementById('gen-niche-name');
+  const original = niche.name;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = original;
+  input.style.cssText = 'font-size:20px;font-weight:700;color:var(--fg);background:var(--bg-input);border:1px solid var(--border-strong);border-radius:6px;padding:4px 10px;font-family:inherit;outline:none;letter-spacing:-0.4px;min-width:200px';
+  h1.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  function commit(save) {
+    if (done) return; done = true;
+    const newName = save ? input.value.trim() : original;
+    const newH1 = document.createElement('h1');
+    newH1.id = 'gen-niche-name';
+    newH1.title = 'Click to rename';
+    newH1.onclick = startRenameNiche;
+    newH1.style.cursor = 'text';
+    newH1.textContent = newName || original;
+    input.replaceWith(newH1);
+    if (!save || !newName || newName === original) return;
+    niche.name = newName;
+    saveNiches(niches);
+    renderSidebar();
+    // Keep "my channel" toggle label and count rows in sync
+    const ownName = document.getElementById('comp-own-channel-name');
+    if (ownName) ownName.textContent = newName;
+  }
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); commit(false); }
+  });
+  input.addEventListener('blur', () => commit(true));
 }
 
 // ── Shared: fetch raw text from active provider with web search ───────
