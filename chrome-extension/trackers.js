@@ -132,7 +132,7 @@ function openPickerPopup({ title, subtitle, items, onSelect, onNew }) {
       e.stopPropagation();
       if (item.id === '__new__') return;
       onSelect(item);
-      if (!onNew.keepOpen) closePopup();
+      closePopup();
     });
     list.appendChild(row);
   }
