@@ -5410,7 +5410,13 @@ if (niches.length) igSelectChannel(niches[0].id);
       loadingEl.style.display = 'flex';
       cardEl.style.display = 'none';
 
-      const cloud = await loadAllFromFirestore(user.uid);
+      let cloud = {};
+      try {
+        cloud = await loadAllFromFirestore(user.uid);
+      } catch (e) {
+        console.error('Firestore load failed, continuing with local data:', e);
+        syncMsg.textContent = 'Cloud sync unavailable — using local data';
+      }
 
       // Settings
       if (cloud.settings) {
