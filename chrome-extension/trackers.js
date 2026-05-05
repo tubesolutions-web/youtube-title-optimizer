@@ -287,7 +287,7 @@ async function openGenerateTitlesPicker(video) {
     const { tsTrackerGroups = [] } = await chrome.storage.local.get('tsTrackerGroups');
 
     if (!tsTrackerGroups.length) {
-      window.open(`${siteBase}titles?topic=${encodeURIComponent(video.title)}`, '_blank');
+      window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}`, '_blank');
       return;
     }
 
@@ -298,12 +298,12 @@ async function openGenerateTitlesPicker(video) {
       subtitle: 'Pick a channel group for style reference',
       items,
       onSelect: (item) => {
-        window.open(`${siteBase}titles?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(item.label)}`, '_blank');
+        window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(item.label)}`, '_blank');
       },
       onNew: {
         placeholder: 'Or enter a channel name…',
         create: (name) => {
-          window.open(`${siteBase}titles?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(name)}`, '_blank');
+          window.open(`${siteBase}title-generator?topic=${encodeURIComponent(video.title)}&group=${encodeURIComponent(name)}`, '_blank');
           closePopup();
         },
       },
@@ -496,7 +496,7 @@ function openOverlayDropdown(anchorBtn, video) {
   const options = [
     { icon: '🔖', label: 'Bookmark', action: () => openBookmarkPicker(anchorBtn, video) },
     { icon: '📊', label: 'Track channel', action: () => openTrackerPicker(anchorBtn, video) },
-    { icon: '🔍', label: 'Find similar', action: () => window.open(`${siteBase}titles?similar=${encodeURIComponent(video.title)}`, '_blank') },
+    { icon: '🔍', label: 'Find similar', action: () => window.open(`${siteBase}title-generator?similar=${encodeURIComponent(video.title)}`, '_blank') },
     { icon: '📝', label: 'Generate titles', action: () => openGenerateTitlesPicker(video) },
     { icon: '📋', label: 'Copy transcript', action: () => copyTranscript(video) },
     { icon: '✏️', label: 'Copy title', action: () => copyTitle(video) },
@@ -592,7 +592,7 @@ function injectWatchButtons() {
   const buttons = [
     ['🔖 Bookmark',          (b) => openBookmarkPicker(b, video)],
     ['📊 Track Channel',     (b) => openTrackerPicker(b, video)],
-    ['🔍 Find similar',      () => window.open(`${siteBase}titles?similar=${encodeURIComponent(video.title)}`, '_blank')],
+    ['🔍 Find similar',      () => window.open(`${siteBase}title-generator?similar=${encodeURIComponent(video.title)}`, '_blank')],
     ['📝 Generate titles',   () => openGenerateTitlesPicker(video)],
     ['📋 Copy transcript',   () => copyTranscript(video)],
     ['✏️ Copy title',        () => copyTitle(video)],

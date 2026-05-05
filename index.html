@@ -2502,9 +2502,9 @@ renderProviderPill();
 renderSidebar();
 if (niches.length) selectNiche(niches[0].id);
 setTimeout(checkStaleOnLoad, 1000);
-// URL slug ↔ internal page id map. Keep "titles" as-is for extension URL compatibility.
+// URL slug ↔ internal page id map.
 const PAGE_TO_SLUG = {
-  titles: 'titles',
+  titles: 'title-generator',
   ideas: 'idea-generator',
   thumbnail: 'thumbnail-generator',
   'thumb-preview': 'thumbnail-preview',
@@ -2514,7 +2514,8 @@ const PAGE_TO_SLUG = {
   script: 'script-generator',
 };
 const SLUG_TO_PAGE = Object.fromEntries(Object.entries(PAGE_TO_SLUG).map(([p, s]) => [s, p]));
-// Also accept old slugs (the internal page ids themselves) for any legacy bookmarked URLs.
+// Also accept old slugs (the internal page ids themselves) for legacy bookmarks and the
+// extension's previous /titles?topic=… links.
 Object.keys(PAGE_TO_SLUG).forEach(p => { if (!(p in SLUG_TO_PAGE)) SLUG_TO_PAGE[p] = p; });
 
 // Pull params from current URL OR from the path stored by 404.html (which preserves the query string)
