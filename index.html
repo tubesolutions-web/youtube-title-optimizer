@@ -2506,8 +2506,13 @@ const _urlParams = new URLSearchParams(location.search);
 const _similarParam = _urlParams.get('similar');
 const _pageParam = _urlParams.get('page');
 const _topicParam = _urlParams.get('topic');
+function _applyTopicParam() {
+  if (!_topicParam) return;
+  const el = document.getElementById('topic');
+  if (el) el.value = decodeURIComponent(_topicParam);
+}
 if (_similarParam) setTimeout(() => { switchPage('niche'); nfFindSimilar(decodeURIComponent(_similarParam)); }, 800);
-else if (_pageParam === 'titles') setTimeout(() => { switchPage('titles'); if (_topicParam) { const el = document.getElementById('topic'); if (el) el.value = decodeURIComponent(_topicParam); } }, 400);
+else if (_pageParam === 'titles') setTimeout(() => { switchPage('titles'); _applyTopicParam(); }, 400);
 else if (_pageParam === 'ideas') setTimeout(() => { switchPage('ideas'); }, 400);
 else {
   const _validPages = ['titles','ideas','thumbnail','thumb-preview','niche','tracker','bookmarks'];
@@ -2515,7 +2520,7 @@ else {
   const _redirectPath = sessionStorage.getItem('spa-redirect');
   if (_redirectPath) { sessionStorage.removeItem('spa-redirect'); }
   const _rawPath = (_redirectPath || location.pathname).replace('/youtube-title-optimizer_V1/', '').replace(/^\//, '').split('/')[0];
-  if (_validPages.includes(_rawPath)) setTimeout(() => switchPage(_rawPath), 100);
+  if (_validPages.includes(_rawPath)) setTimeout(() => { switchPage(_rawPath); if (_rawPath === 'titles') _applyTopicParam(); }, 100);
 }
 if (window.location.protocol === 'file:') {
   document.getElementById('file-protocol-banner').style.display = 'block';
