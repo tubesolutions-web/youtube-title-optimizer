@@ -1789,7 +1789,10 @@ select.ig-input { cursor: pointer; }
     <!-- Generator -->
     <div class="view" id="view-gen">
       <div class="gen-header">
-        <h1 id="gen-niche-name" title="Click to rename" onclick="startRenameNiche()" style="cursor:text">Channel</h1>
+        <div style="display:flex;align-items:center;gap:8px">
+          <h1 id="gen-niche-name" title="Click to rename" style="cursor:text;margin:0">Channel</h1>
+          <button id="gen-niche-rename-btn" title="Rename channel" style="background:none;border:none;color:var(--fg-faint);cursor:pointer;font-size:14px;padding:4px 6px;border-radius:4px;line-height:1" onmouseover="this.style.background='var(--bg-hover)';this.style.color='var(--fg)'" onmouseout="this.style.background='none';this.style.color='var(--fg-faint)'">✎</button>
+        </div>
         <div class="gen-header-right">
           <button class="btn-ghost" onclick="reanalyzeChannel()">Re-analyze</button>
           <button class="btn-ghost" onclick="openModal(currentNicheId)">Edit</button>
@@ -2649,11 +2652,13 @@ function startRenameNiche() {
   const niche = niches.find(n => n.id === currentNicheId);
   if (!niche) return;
   const h1 = document.getElementById('gen-niche-name');
+  if (!h1) return;
   const original = niche.name;
   const input = document.createElement('input');
   input.type = 'text';
   input.value = original;
-  input.style.cssText = 'font-size:20px;font-weight:700;color:var(--fg);background:var(--bg-input);border:1px solid var(--border-strong);border-radius:6px;padding:4px 10px;font-family:inherit;outline:none;letter-spacing:-0.4px;min-width:200px';
+  input.id = 'gen-niche-name-input';
+  input.style.cssText = 'font-size:20px;font-weight:700;color:var(--fg);background:var(--bg-input);border:1px solid var(--border-strong);border-radius:6px;padding:4px 10px;font-family:inherit;outline:none;letter-spacing:-0.4px;min-width:200px;margin:0';
   h1.replaceWith(input);
   input.focus();
   input.select();
@@ -2664,15 +2669,15 @@ function startRenameNiche() {
     const newH1 = document.createElement('h1');
     newH1.id = 'gen-niche-name';
     newH1.title = 'Click to rename';
-    newH1.onclick = startRenameNiche;
     newH1.style.cursor = 'text';
+    newH1.style.margin = '0';
     newH1.textContent = newName || original;
+    newH1.addEventListener('click', startRenameNiche);
     input.replaceWith(newH1);
     if (!save || !newName || newName === original) return;
     niche.name = newName;
     saveNiches(niches);
     renderSidebar();
-    // Keep "my channel" toggle label and count rows in sync
     const ownName = document.getElementById('comp-own-channel-name');
     if (ownName) ownName.textContent = newName;
   }
@@ -2682,6 +2687,14 @@ function startRenameNiche() {
   });
   input.addEventListener('blur', () => commit(true));
 }
+
+// Bind rename triggers via JS so they survive any re-render
+document.addEventListener('DOMContentLoaded', () => {
+  const h1 = document.getElementById('gen-niche-name');
+  const btn = document.getElementById('gen-niche-rename-btn');
+  if (h1) h1.addEventListener('click', startRenameNiche);
+  if (btn) btn.addEventListener('click', startRenameNiche);
+});
 
 // ── Shared: fetch raw text from active provider with web search ───────
 async function fetchTitlesWithProvider(prompt, provider, key) {
