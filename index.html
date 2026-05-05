@@ -4590,6 +4590,7 @@ function trackerSave() {
   if (typeof tsStorageSet === 'function') {
     tsStorageSet({ tsTrackerGroups: slim });
     tsStorageSet({ tsTrackedChannelUrls: trackerGroups.flatMap(g => (g.channels || []).map(c => c.url)) });
+    tsStorageSet({ tsGroupChannels: Object.fromEntries(trackerGroups.map(g => [g.id, (g.channels || []).map(c => c.url)])) });
   } else if (typeof chrome !== 'undefined' && chrome.storage) {
     chrome.storage.local.set({ tsTrackerGroups: slim });
   }
@@ -6281,6 +6282,7 @@ bookmarksEnrich();
         trackerSave();
         trackerRenderSidebar();
         tsStorageSet({ tsTrackedChannelUrls: trackerGroups.flatMap(g => (g.channels || []).map(c => c.url)) });
+        tsStorageSet({ tsGroupChannels: Object.fromEntries(trackerGroups.map(g => [g.id, (g.channels || []).map(c => c.url)])) });
         (() => { const t = document.createElement('div'); t.textContent = '📊 Channel added to tracker!'; t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1e1e1e;border:1px solid #3a6fd8;border-radius:10px;padding:10px 20px;font-size:14px;color:#7ba8f5;z-index:9999;pointer-events:none'; document.body.appendChild(t); setTimeout(() => t.remove(), 2500); })();
       }
       await tsStorageRemove('pendingTrackerChannels');
@@ -6370,6 +6372,7 @@ bookmarksEnrich();
     tsStorageSet({ tsBookmarkFolders: bookmarkFolders });
     tsStorageSet({ tsTrackerGroups: trackerGroups.map(({ id, name }) => ({ id, name })) });
     tsStorageSet({ tsTrackedChannelUrls: trackerGroups.flatMap(g => (g.channels || []).map(c => c.url)) });
+    tsStorageSet({ tsGroupChannels: Object.fromEntries(trackerGroups.map(g => [g.id, (g.channels || []).map(c => c.url)])) });
     syncPending();
   });
 

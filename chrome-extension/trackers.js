@@ -235,6 +235,15 @@ async function openTrackerPicker(anchorEl, video) {
       items: items.length ? items : [{ id: '__new__', label: 'No groups yet — create one below' }],
       onSelect: (item) => guardedStorage(async () => {
         if (item.id === '__new__') return;
+        const { tsGroupChannels = {}, pendingTrackerChannels = [] } =
+          await chrome.storage.local.get(['tsGroupChannels', 'pendingTrackerChannels']);
+        const inGroup = (tsGroupChannels[item.id] || []).includes(video.channelUrl)
+          || pendingTrackerChannels.some(c => c.url === video.channelUrl && c.groupId === item.id);
+        if (inGroup) {
+          showToast('📊 Already in "' + item.label + '"');
+          anchorEl.classList.add('ts-btn-active');
+          return;
+        }
         await queueTrackerChannel(video, item.id, item.label);
         showToast('📊 Channel added to tracker!');
         anchorEl.classList.add('ts-btn-active');
